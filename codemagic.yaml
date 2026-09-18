@@ -14,8 +14,8 @@
 #   3. Push this repo, add it in Codemagic, choose "codemagic.yaml".
 #   4. Signing: the certificate and the App Store profile are created through the
 #      API key by the "Set up code signing" step. The private key comes from the
-#      this app's own secure variable CERTIFICATE_PRIVATE_KEY (base64 of the PEM;
-#      Codemagic → app → Environment variables, group "default").
+#      shared group `ios_signing` (CERTIFICATE_PRIVATE_KEY). If that is not
+#      available, add the variable to this app itself and drop the group below.
 
 definitions:
   flutter_version: &flutter_version stable
@@ -28,6 +28,10 @@ workflows:
     integrations:
       app_store_connect: Codemagic
     environment:
+      groups:
+        # Shared with the other apps: holds CERTIFICATE_PRIVATE_KEY (raw PEM or
+        # base64). Reusing it avoids a new distribution certificate.
+        - ios_signing
       flutter: *flutter_version
       xcode: latest
       cocoapods: default
