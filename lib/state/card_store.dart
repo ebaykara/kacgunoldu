@@ -1,12 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 
 import '../domain/card.dart';
 import '../domain/date.dart';
 import '../domain/order.dart';
+import '../domain/reminders.dart';
 import '../domain/text.dart';
+import '../services/launch_theme.dart';
+import '../services/reminders.dart';
 import '../storage/repository.dart';
+import '../storage/seed.dart';
+import '../theme/system_bars.dart';
 import '../theme/tokens.dart';
 
 class Snack {
@@ -43,12 +49,43 @@ List<DateKey> _insertRecord(List<DateKey> recs, DateKey key) {
 /// A [ChangeNotifier] rather than a heavier state package: the whole app is one
 /// screen over one list, and this keeps the data flow readable end to end.
 class CardStore extends ChangeNotifier with WidgetsBindingObserver {
-  CardStore({CardRepository? repository}) : _repository = repository ?? CardRepository();
+  CardStore({CardRepository? repository, Reminders? reminders})
+      : _repository = repository ?? CardRepository(),
+        _reminders = reminders ?? NoopReminders();
 
   final CardRepository _repository;
+  final Reminders _reminders;
+
+  CardLayout _layout = CardLayout.grid;
+  int _reminderHour = defaultReminderHour;
+  int _reminderMinute = defaultReminderMinute;
+  Future<void> _syncChain = Future.value();
+  StreamSubscription<String>? _tapSub;
+  bool _disposed = false;
+
+  /// A card the person asked to open from a notification. The home screen
+  /// consumes it (opens the card, then clears it).
+  final openCardRequest = ValueNotifier<String?>(null);
+
+  /// Grid or list on the Kartlar tab.
+  CardLayout get layout => _layout;
+
+  void setLayout(CardLayout next) {
+    if (next == _layout) return;
+    _layout = next;
+    unawaited(_repository.saveLayout(next));
+    notifyListeners();
+  }
+
+  int get reminderHour => _reminderHour;
+  int get reminderMinute => _reminderMinute;
+
+  /// How many cards are marked for reminders.
+  int get reminderCount => _cards.where((c) => c.notify).length;
 
   List<Card> _cards = const [];
   List<String>? _manualOrder;
+  Profile _profile = const Profile();
   bool _ready = false;
   DateKey _today = todayKey();
   Snack? _snack;
@@ -62,6 +99,12 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   DateKey get today => _today;
   Snack? get snack => _snack;
   RecordPulse? get recordPulse => _recordPulse;
+  Profile get profile => _profile;
+
+  /// True once someone has dragged a card and the urgency sort is off.
+  bool get hasManualOrder => _manualOrder != null && _manualOrder!.isNotEmpty;
+
+  Card? byId(String id) => _cards.where((c) => c.id == id).firstOrNull;
 
   /// The grid's display order: the saved drag arrangement if there is one,
   /// otherwise urgency (overdue first, then soonest-due).
@@ -72,12 +115,40 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     final results = await Future.wait([
       _repository.loadCards(),
       _repository.loadManualOrder(),
+      _repository.loadProfile(),
+      _repository.loadThemeId(),
+      _repository.loadReminderTime(),
+      _repository.loadLayout(),
     ]);
     _cards = results[0] as List<Card>;
     _manualOrder = results[1] as List<String>?;
+    _profile = results[2] as Profile;
+    AppColor.current = paletteById(results[3] as String?);
+    unawaited(applyLaunchTheme(AppColor.current.id));
+    _layout = results[5] as CardLayout;
+    final time = results[4] as (int, int)?;
+    if (time != null) {
+      _reminderHour = time.$1;
+      _reminderMinute = time.$2;
+    }
+
     _ready = true;
     _scheduleMidnight();
     notifyListeners();
+    // Not awaited: the notification plugin and the timezone database are
+    // slow to start, and nothing on screen needs them — the app should draw
+    // its first frame first.
+    unawaited(_initReminders());
+  }
+
+  Future<void> _initReminders() async {
+    await _reminders.init();
+    if (_disposed) return;
+    _tapSub = _reminders.taps.listen((id) => openCardRequest.value = id);
+    final launched = await _reminders.launchCardId();
+    if (_disposed) return;
+    if (launched != null) openCardRequest.value = launched;
+    _syncReminders();
   }
 
   @override
@@ -85,6 +156,9 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _snackTimer?.cancel();
     _midnightTimer?.cancel();
+    _disposed = true;
+    _tapSub?.cancel();
+    openCardRequest.dispose();
     super.dispose();
   }
 
@@ -102,6 +176,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     final next = todayKey();
     if (next != _today) {
       _today = next;
+      _syncReminders();
       notifyListeners();
     }
   }
@@ -117,6 +192,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   void _commit(List<Card> next) {
     _cards = next;
     unawaited(_repository.saveCards(next));
+    _syncReminders();
     notifyListeners();
   }
 
@@ -131,6 +207,13 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
         notifyListeners();
       },
     );
+  }
+
+  /// A plain, non-undoable message (copy/paste feedback and the like).
+  void toast(String message) {
+    _undoData = null;
+    _showSnack(Snack(message: message, undoable: false));
+    notifyListeners();
   }
 
   void dismissSnack() {
@@ -170,9 +253,9 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Create a card and return its id.
   ///
-  /// [offset] of `null` leaves the card without a first record — the create
-  /// sheet then opens the record sheet so the date can be picked.
-  String? addCard(String rawName, int? offset) {
+  /// [offset] of `null` leaves the card without a first record ("Henüz
+  /// yapmadım" in the card form).
+  String? addCard(String rawName, int? offset, {String? icon, int? every, bool notify = false}) {
     final trimmed = rawName.trim();
     if (trimmed.isEmpty) return null;
     // The field invites a lowercase, first-person sentence ("çamaşır
@@ -183,11 +266,13 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
       id: '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}-${_cards.length}',
       name: name,
       recs: offset == null ? const [] : [shiftDays(_today, -offset)],
+      icon: icon,
+      every: every,
+      created: _today,
+      notify: notify,
     );
     _undoData = null;
-    if (offset != null) {
-      _showSnack(Snack(message: '“$name” eklendi', undoable: false));
-    }
+    _showSnack(Snack(message: '“$name” eklendi', undoable: false));
     _commit([card, ..._cards]);
     return card.id;
   }
@@ -220,5 +305,221 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
 
   void clearPulse() {
     _recordPulse = null;
+  }
+
+  /// Take one record off a card. Undoable, like a record.
+  void removeRecord(String cardId, DateKey key) {
+    final card = byId(cardId);
+    if (card == null || !card.recs.contains(key)) return;
+    _undoData = (id: card.id, recs: card.recs);
+    _recordPulse = null;
+    _showSnack(Snack(message: '${formatDayMonth(key, _today)} kaydı silindi', undoable: true));
+    _commit([
+      for (final c in _cards)
+        if (c.id == card.id) c.copyWith(recs: c.recs.where((r) => r != key).toList()) else c,
+    ]);
+  }
+
+  /// Move one record to another day. Undoable.
+  void moveRecord(String cardId, DateKey from, DateKey to) {
+    final card = byId(cardId);
+    if (card == null || from == to || !card.recs.contains(from)) return;
+    _undoData = (id: card.id, recs: card.recs);
+    _recordPulse = null;
+    _showSnack(Snack(message: 'Kayıt ${formatDayMonth(to, _today)} olarak güncellendi', undoable: true));
+    _commit([
+      for (final c in _cards)
+        if (c.id == card.id)
+          c.copyWith(recs: _insertRecord(c.recs.where((r) => r != from).toList(), to))
+        else
+          c,
+    ]);
+  }
+
+  /// Rename a card, change its glyph or its declared rhythm. [every] of
+  /// `null` hands the rhythm back to the learned median.
+  void updateCard(String cardId, {required String name, String? icon, int? every, bool? notify}) {
+    final card = byId(cardId);
+    final trimmed = name.trim();
+    if (card == null || trimmed.isEmpty) return;
+    _undoData = null;
+    _showSnack(const Snack(message: 'Kart güncellendi', undoable: false));
+    _commit([
+      for (final c in _cards)
+        if (c.id == cardId)
+          c.copyWith(
+            name: capitalizeTr(trimmed),
+            icon: icon,
+            clearIcon: icon == null,
+            every: every,
+            clearEvery: every == null,
+            notify: notify,
+          )
+        else
+          c,
+    ]);
+  }
+
+  /// Forget the dragged arrangement; the grid sorts by urgency again.
+  void resetOrder() {
+    _manualOrder = null;
+    unawaited(_repository.clearManualOrder());
+    _showSnack(const Snack(message: 'Kartlar aciliyete göre sıralandı', undoable: false));
+    notifyListeners();
+  }
+
+  /// The active colour theme's id.
+  String get themeId => AppColor.current.id;
+
+  /// Switch the colour theme everywhere, at once, and remember it.
+  void setTheme(String id) {
+    final next = paletteById(id);
+    if (next.id == AppColor.current.id) return;
+    AppColor.current = next;
+    unawaited(_repository.saveThemeId(next.id));
+    unawaited(applyLaunchTheme(next.id));
+    applySystemBars();
+    notifyListeners();
+    // Colours are read straight from [AppColor], not inherited, so nothing
+    // rebuilds by itself — including pages further down the navigator stack.
+    // Mark every element dirty once; the next frame repaints in the new
+    // theme.
+    void visit(Element e) {
+      e.markNeedsBuild();
+      e.visitChildren(visit);
+    }
+
+    WidgetsBinding.instance.rootElement?.visitChildren(visit);
+  }
+
+  void updateProfile(Profile next) {
+    _profile = Profile(name: next.name.trim(), handle: next.handle.trim().replaceAll('@', ''));
+    unawaited(_repository.saveProfile(_profile));
+    notifyListeners();
+  }
+
+  /// Delete every card. Not undoable — the caller confirms first.
+  void clearAll() {
+    _undoData = null;
+    _recordPulse = null;
+    _manualOrder = null;
+    unawaited(_repository.clearManualOrder());
+    _showSnack(const Snack(message: 'Bütün kartlar silindi', undoable: false));
+    _commit(const []);
+  }
+
+  /// Add the example cards back, skipping any that are already here.
+  int loadSamples() {
+    final have = _cards.map((c) => c.id).toSet();
+    final missing = seedCards(_today).where((c) => !have.contains(c.id)).toList();
+    if (missing.isEmpty) return 0;
+    _undoData = null;
+    _showSnack(Snack(message: '${missing.length} örnek kart eklendi', undoable: false));
+    _commit([..._cards, ...missing]);
+    return missing.length;
+  }
+
+  /// Everything, as the JSON backup the settings screen copies out.
+  String exportJson() => jsonEncode({
+        'app': 'kac_gun_oldu',
+        'version': 1,
+        'cards': _cards.map((c) => c.toJson()).toList(),
+        'order': _manualOrder,
+        'profile': _profile.toJson(),
+      });
+
+  /// Replace everything from a backup. Returns the number of cards restored,
+  /// or `null` if [raw] is not a backup this app wrote (nothing changes then).
+  int? importJson(String raw) {
+    Object? parsed;
+    try {
+      parsed = jsonDecode(raw.trim());
+    } catch (_) {
+      return null;
+    }
+    final list = parsed is Map ? parsed['cards'] : parsed;
+    if (list is! List) return null;
+    final cards = <Card>[];
+    for (final entry in list) {
+      final card = Card.tryFromJson(entry);
+      if (card == null) return null;
+      cards.add(card.copyWith(recs: [...card.recs]..sort((a, b) => b.compareTo(a))));
+    }
+    final order = parsed is Map ? parsed['order'] : null;
+    _manualOrder = order is List && order.every((e) => e is String) ? order.cast<String>() : null;
+    if (_manualOrder == null) {
+      unawaited(_repository.clearManualOrder());
+    } else {
+      unawaited(_repository.saveManualOrder(_manualOrder!));
+    }
+    final profile = parsed is Map ? parsed['profile'] : null;
+    if (profile is Map && profile['name'] is String) {
+      _profile = Profile(
+        name: profile['name'] as String,
+        handle: profile['handle'] is String ? profile['handle'] as String : '',
+      );
+      unawaited(_repository.saveProfile(_profile));
+    }
+    _undoData = null;
+    _recordPulse = null;
+    _showSnack(Snack(message: '${cards.length} kart geri yüklendi', undoable: false));
+    _commit(cards);
+    return cards.length;
+  }
+
+  // ---- reminders ---------------------------------------------------------
+
+  /// Rebuild what the operating system has pending from the current cards.
+  /// Runs strictly one after another so a quick series of edits can't
+  /// interleave its cancel/schedule steps.
+  void _syncReminders() {
+    final plan = planReminders(
+      _cards,
+      DateTime.now(),
+      hour: _reminderHour,
+      minute: _reminderMinute,
+    );
+    _syncChain = _syncChain.then((_) => _reminders.sync(plan));
+  }
+
+  /// Asks the system for notification permission (first use only prompts).
+  Future<bool> requestReminderPermission() => _reminders.requestPermission();
+
+  /// Turn one card's reminders on or off. Turning on asks for permission
+  /// first; returns `false` (and changes nothing) if it is refused.
+  Future<bool> setCardNotify(String cardId, bool on) async {
+    final card = byId(cardId);
+    if (card == null) return false;
+    if (on && !await requestReminderPermission()) {
+      toast('Bildirim izni kapalı. Telefon ayarlarından açabilirsin.');
+      return false;
+    }
+    _commit([
+      for (final c in _cards)
+        if (c.id == cardId) c.copyWith(notify: on) else c,
+    ]);
+    return true;
+  }
+
+  /// The time of day reminders arrive.
+  void setReminderTime(int hour, int minute) {
+    _reminderHour = hour;
+    _reminderMinute = minute;
+    unawaited(_repository.saveReminderTime(hour, minute));
+    _syncReminders();
+    notifyListeners();
+  }
+
+  /// Shows a sample notification right now, in the real format.
+  Future<void> sendTestReminder() async {
+    if (!await requestReminderPermission()) {
+      toast('Bildirim izni kapalı. Telefon ayarlarından açabilirsin.');
+      return;
+    }
+    final sample = _cards.where((c) => c.notify).firstOrNull ?? _cards.firstOrNull;
+    await _reminders.showNow(
+      sample?.name ?? 'Saçımı kestirdim',
+      '36 gündür yapmadın, sırası geldi. Genelde 36 günde bir yapıyorsun.',
+    );
   }
 }

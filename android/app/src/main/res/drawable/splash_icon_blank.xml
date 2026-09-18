@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ always draws a splash icon; it can't be switched off, only
+     made invisible. The system launch screen is just the theme's colour: the
+     animation is a view MainActivity puts on top the moment the app window
+     exists (before the Flutter engine is up), because some phones never play
+     a system splash animation and remove the splash instantly. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@android:color/transparent"/>
+</shape>

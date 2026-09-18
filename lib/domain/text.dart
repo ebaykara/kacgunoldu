@@ -27,3 +27,26 @@ String upperTr(String text) {
   }
   return buffer.toString();
 }
+
+/// Lowercase with Turkish rules (`I` -> `ı`, `İ` -> `i`), for matching.
+String lowerTr(String text) {
+  final buffer = StringBuffer();
+  for (final rune in text.runes) {
+    final ch = String.fromCharCode(rune);
+    buffer.write(switch (ch) {
+      'I' => 'ı',
+      'İ' => 'i',
+      _ => ch.toLowerCase(),
+    });
+  }
+  return buffer.toString();
+}
+
+/// Up to two initials for an avatar: `Eyüp Baykara` -> `EB`.
+String initialsOf(String name) {
+  final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  if (parts.isEmpty) return '';
+  final first = upperTr(parts.first[0]);
+  if (parts.length == 1) return first;
+  return first + upperTr(parts.last[0]);
+}

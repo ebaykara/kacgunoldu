@@ -2,12 +2,17 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ne_zaman/domain/card.dart';
-import 'package:ne_zaman/domain/date.dart';
-import 'package:ne_zaman/screens/home_screen.dart';
-import 'package:ne_zaman/state/card_store.dart';
-import 'package:ne_zaman/widgets/card_tile.dart';
+import 'package:kac_gun_oldu/domain/card.dart';
+import 'package:kac_gun_oldu/domain/date.dart';
+import 'package:kac_gun_oldu/screens/home_screen.dart';
+import 'package:kac_gun_oldu/services/reminders.dart';
+import 'package:kac_gun_oldu/state/card_store.dart';
+import 'package:kac_gun_oldu/theme/tokens.dart';
+import 'package:kac_gun_oldu/widgets/card_row_tile.dart';
+import 'package:kac_gun_oldu/widgets/card_tile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../fake_reminders.dart';
 
 /// A card `daysAgo` days old, with [gaps] behind it so it learns an interval.
 Map<String, Object?> card(String id, String name, int daysAgo, List<int> gaps) {
@@ -27,12 +32,13 @@ Map<String, Object?> card(String id, String name, int daysAgo, List<int> gaps) {
 
 Future<CardStore> pumpApp(
   WidgetTester tester,
-  List<Map<String, Object?>> cards,
-) async {
+  List<Map<String, Object?>> cards, {
+  Reminders? reminders,
+}) async {
   SharedPreferences.setMockInitialValues({
     'nezaman.cards.v1': jsonEncode(cards),
   });
-  final store = CardStore();
+  final store = CardStore(reminders: reminders);
   await store.init();
 
   // A real phone-sized surface — the default 800x600 test window would make a
@@ -62,9 +68,10 @@ Future<CardStore> pumpApp(
 Future<void> runHome(
   WidgetTester tester,
   List<Map<String, Object?>> cards,
-  Future<void> Function(CardStore store) body,
-) async {
-  final store = await pumpApp(tester, cards);
+  Future<void> Function(CardStore store) body, {
+  Reminders? reminders,
+}) async {
+  final store = await pumpApp(tester, cards, reminders: reminders);
   try {
     await body(store);
   } finally {
@@ -76,6 +83,13 @@ Future<void> runHome(
 /// necessarily first — look it up by name.
 Card byName(CardStore store, String name) =>
     store.cards.firstWhere((c) => c.name == name);
+
+Future<void> tapText(WidgetTester tester, String text) async {
+  await tester.ensureVisible(find.text(text));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(text));
+  await tester.pumpAndSettle();
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -91,49 +105,99 @@ void main() {
     await runHome(tester, [lateCard, freshCard], (store) async {
       expect(find.byType(CardTile), findsNWidgets(2));
       expect(find.text('1 kart gecikti'), findsOneWidget);
-      expect(find.text('8 gün geç'), findsOneWidget);
+      expect(find.text('Kaç gün oldu?'), findsOneWidget);
+      // Overdue is named by the header pill; on the card it is one status
+      // line under the day count.
+      expect(find.text('8 gün geçti'), findsOneWidget);
     });
   });
 
-  testWidgets('the overdue pill filters down to the late cards and back', (
+  testWidgets(
+    'the overdue pill opens the overdue page, listing only late cards',
+    (tester) async {
+      await runHome(tester, [lateCard, freshCard], (store) async {
+        await tester.tap(find.text('1 kart gecikti'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Gecikenler'), findsOneWidget);
+        expect(find.text('1 kartın zamanı geçti'), findsOneWidget);
+        expect(find.text('Spor salonuna gittim'), findsOneWidget);
+        expect(find.text('Bitkileri suladım'), findsNothing);
+
+        await tester.tap(find.bySemanticsLabel('Geri'));
+        await tester.pumpAndSettle();
+        expect(find.byType(CardTile), findsNWidgets(2));
+      });
+    },
+  );
+
+  testWidgets('swiping an overdue row records it and it leaves the list', (
     tester,
   ) async {
     await runHome(tester, [lateCard, freshCard], (store) async {
       await tester.tap(find.text('1 kart gecikti'));
       await tester.pumpAndSettle();
-      expect(find.byType(CardTile), findsOneWidget);
-      expect(find.text('Spor salonuna gittim'), findsOneWidget);
-      expect(find.text('Bitkileri suladım'), findsNothing);
 
-      await tester.tap(find.text('1 kart gecikti'));
+      await tester.drag(
+        find.text('Spor salonuna gittim'),
+        const Offset(400, 0),
+      );
       await tester.pumpAndSettle();
-      expect(find.byType(CardTile), findsNWidgets(2));
+
+      expect(
+        store.cards.firstWhere((c) => c.id == 'late').recs.first,
+        todayKey(),
+      );
+      expect(find.text('Her şey yerinde.'), findsOneWidget);
     });
   });
 
   testWidgets(
-    'tapping a card opens the record sheet and picking a date records it',
+    'tapping a card opens its detail page; "Bugün yaptım" records it',
     (tester) async {
       await runHome(tester, [lateCard, freshCard], (store) async {
         await tester.tap(find.text('Spor salonuna gittim'));
         await tester.pumpAndSettle();
 
-        // The sheet is up, with the quick picks.
-        expect(find.text('NE ZAMAN YAPTIN?'), findsOneWidget);
-        expect(find.text('Bugün'), findsOneWidget);
-        expect(find.text('DAHA GERİDEN SEÇ'), findsOneWidget);
+        expect(find.text('gün oldu'), findsOneWidget);
+        expect(find.text('Son kayıt'), findsOneWidget);
+        expect(find.text('Geçmiş'), findsOneWidget);
 
-        await tester.tap(find.text('Bugün'));
+        await tester.tap(find.text('Bugün yaptım'));
         await tester.pumpAndSettle();
 
-        // Recorded today, so the card resets and the snackbar offers an undo.
+        // Recorded today: the page stays, flips its button and offers undo.
         final recorded = store.cards.firstWhere((c) => c.id == 'late');
         expect(recorded.recs.first, todayKey());
+        expect(find.text('Bugün işaretlendi'), findsOneWidget);
         expect(
           find.textContaining('Spor salonuna gittim · bugün'),
           findsOneWidget,
         );
         expect(find.text('Geri al'), findsOneWidget);
+      });
+    },
+  );
+
+  testWidgets(
+    '"Başka bir gün seç" opens the record sheet and picks a past day',
+    (tester) async {
+      await runHome(tester, [lateCard, freshCard], (store) async {
+        await tester.tap(find.text('Spor salonuna gittim'));
+        await tester.pumpAndSettle();
+        await tapText(tester, 'Başka bir gün seç');
+
+        expect(find.text('NE ZAMAN YAPTIN?'), findsOneWidget);
+        expect(find.text('DAHA GERİDEN SEÇ'), findsOneWidget);
+        expect(find.text('Takvimden seç'), findsOneWidget);
+
+        await tester.tap(find.text('Dün'));
+        await tester.pumpAndSettle();
+
+        expect(
+          store.cards.firstWhere((c) => c.id == 'late').recs.first,
+          shiftDays(todayKey(), -1),
+        );
       });
     },
   );
@@ -144,7 +208,7 @@ void main() {
 
       await tester.tap(find.text('Spor salonuna gittim'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Bugün'));
+      await tester.tap(find.text('Bugün yaptım'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Geri al'));
@@ -152,6 +216,32 @@ void main() {
 
       expect(store.cards.firstWhere((c) => c.id == 'late').recs, before);
       expect(find.text('Geri al'), findsNothing);
+      expect(find.text('Bugün yaptım'), findsOneWidget);
+    });
+  });
+
+  testWidgets('a single record can be removed from the history, undoably', (
+    tester,
+  ) async {
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      final before = [...store.cards.firstWhere((c) => c.id == 'fresh').recs];
+
+      await tester.tap(find.text('Bitkileri suladım'));
+      await tester.pumpAndSettle();
+      // The date shows twice — "Son kayıt" and the newest history row.
+      await tester.tap(find.text(formatFullDate(before.first)).last);
+      await tester.pumpAndSettle();
+      await tapText(tester, 'Bu kaydı sil');
+
+      expect(
+        store.cards.firstWhere((c) => c.id == 'fresh').recs,
+        before.skip(1).toList(),
+      );
+      expect(find.textContaining('kaydı silindi'), findsOneWidget);
+
+      await tester.tap(find.text('Geri al'));
+      await tester.pumpAndSettle();
+      expect(store.cards.firstWhere((c) => c.id == 'fresh').recs, before);
     });
   });
 
@@ -160,7 +250,9 @@ void main() {
       await tester.tap(find.text('Bitkileri suladım'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.bySemanticsLabel('Kartı sil'));
+      await tester.tap(find.bySemanticsLabel('Kart seçenekleri'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Kartı sil'));
       await tester.pumpAndSettle();
 
       // The confirmation names the card and warns that it cannot be undone.
@@ -171,68 +263,348 @@ void main() {
       await tester.pumpAndSettle();
       expect(store.cards.any((c) => c.id == 'fresh'), isTrue);
 
-      await tester.tap(find.bySemanticsLabel('Kartı sil'));
+      await tester.tap(find.text('Kartı sil'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Sil'));
       await tester.pumpAndSettle();
 
+      // Back on the grid, with the card gone.
       expect(store.cards.any((c) => c.id == 'fresh'), isFalse);
+      expect(find.byType(CardTile), findsOneWidget);
       expect(find.textContaining('silindi'), findsOneWidget);
     });
   });
 
-  testWidgets(
-    '"Bugün itibariyle ekle" creates a card with a capital first letter',
-    (tester) async {
-      await runHome(tester, [freshCard], (store) async {
-        await tester.tap(find.text('Yeni kart'));
-        await tester.pumpAndSettle();
+  testWidgets('a new card is recorded today, with a capital first letter', (
+    tester,
+  ) async {
+    await runHome(tester, [freshCard], (store) async {
+      await tester.tap(find.text('Yeni kart'));
+      await tester.pumpAndSettle();
 
-        expect(find.text('Neyi takip edelim?'), findsOneWidget);
-        // Tap a suggestion chip, which fills the lowercase sentence.
-        await tester.tap(find.text('ilaç aldım'));
-        await tester.pumpAndSettle();
+      expect(find.text('Ne yaptın?'), findsOneWidget);
+      expect(find.text('Ne sıklıkla tekrarlıyorsun?'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'ilaç aldım');
+      await tester.pumpAndSettle();
+      // The glyph follows the name as it is typed.
+      expect(find.byIcon(Icons.medication_outlined), findsOneWidget);
 
-        await tester.tap(find.text('Bugün itibariyle ekle'));
-        await tester.pumpAndSettle();
+      await tapText(tester, 'Kartı oluştur');
 
-        // Stored with Turkish casing: "i" becomes the dotted "İ".
-        final created = byName(store, 'İlaç aldım');
-        expect(created.recs, [todayKey()]);
-      });
-    },
-  );
+      // Stored with Turkish casing: "i" becomes the dotted "İ".
+      final created = byName(store, 'İlaç aldım');
+      expect(created.recs, [todayKey()]);
+      expect(created.every, isNull);
+      expect(created.created, todayKey());
+      expect(find.text('“İlaç aldım” eklendi'), findsOneWidget);
+    });
+  });
 
-  testWidgets(
-    '"Ekle ve tarih seç" creates a record-less card and opens the record sheet',
-    (tester) async {
-      await runHome(tester, [freshCard], (store) async {
-        await tester.tap(find.text('Yeni kart'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('spor yaptım'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Ekle ve tarih seç'));
-        await tester.pumpAndSettle();
+  testWidgets('a declared rhythm and "Henüz yapmadım" are saved as chosen', (
+    tester,
+  ) async {
+    await runHome(tester, [freshCard], (store) async {
+      await tester.tap(find.text('Yeni kart'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'banyoyu temizledim');
+      await tester.pumpAndSettle();
 
-        expect(byName(store, 'Spor yaptım').recs, isEmpty);
-        // Handed straight over to the record sheet for the new card. The name
-        // appears twice: once on the card behind the sheet, once as its title.
-        expect(find.text('NE ZAMAN YAPTIN?'), findsOneWidget);
-        expect(find.text('Spor yaptım'), findsNWidgets(2));
-      });
-    },
-  );
+      await tapText(tester, 'Haftada bir');
+      await tapText(tester, 'Bugün');
+      await tapText(tester, 'Henüz yapmadım');
+      await tapText(tester, 'Kartı oluştur');
 
-  testWidgets('the timeline tab lists what actually happened', (tester) async {
+      final created = byName(store, 'Banyoyu temizledim');
+      expect(created.recs, isEmpty);
+      expect(created.every, 7);
+    });
+  });
+
+  testWidgets('editing renames a card and changes its rhythm', (tester) async {
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      await tester.tap(find.text('Bitkileri suladım'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Kart seçenekleri'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Düzenle'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Kartı düzenle'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'Çiçekleri suladım');
+      await tapText(tester, '2 günde bir');
+      await tapText(tester, 'Kaydet');
+
+      final edited = store.cards.firstWhere((c) => c.id == 'fresh');
+      expect(edited.name, 'Çiçekleri suladım');
+      expect(edited.every, 2);
+      // Back on the detail page, which follows the rename.
+      expect(find.text('Çiçekleri suladım'), findsOneWidget);
+    });
+  });
+
+  testWidgets('the timeline tab lists every record and filters by range', (
+    tester,
+  ) async {
     await runHome(tester, [lateCard, freshCard], (store) async {
       await tester.tap(find.text('Zaman tüneli'));
       await tester.pumpAndSettle();
 
-      // Cards are gone; records are listed instead.
+      // Cards are gone; records are listed instead, grouped by month.
       expect(find.byType(CardTile), findsNothing);
-      expect(find.text('2 gün önce'), findsOneWidget);
-      // The header stays put.
-      expect(find.text('En son ne zaman?'), findsOneWidget);
+      expect(find.text('Tümü'), findsOneWidget);
+      expect(find.text('2 gün'), findsOneWidget);
+      final t = DateTime.now();
+      expect(find.text('${months[t.month - 1]} ${t.year}'), findsOneWidget);
+
+      // The last week: only the plants (2 and 6 days ago), not the gym (11).
+      await tester.tap(find.text('Hafta'));
+      await tester.pumpAndSettle();
+      expect(find.text('Bitkileri suladım'), findsNWidgets(2));
+      expect(find.text('Spor salonuna gittim'), findsNothing);
+
+      // A row opens its card.
+      await tester.tap(find.text('2 gün'));
+      await tester.pumpAndSettle();
+      expect(find.text('Geçmiş'), findsOneWidget);
+    });
+  });
+
+  testWidgets(
+    'no cards shows the guided start; a suggestion prefills the form',
+    (tester) async {
+      await runHome(tester, [], (store) async {
+        expect(find.text('İlk kartını oluştur'), findsOneWidget);
+        expect(find.text('Önerilen kartlar'), findsOneWidget);
+
+        await tapText(tester, 'Saçımı kestirdim');
+        expect(find.text('Yeni kart'), findsOneWidget);
+        await tapText(tester, 'Kartı oluştur');
+
+        final created = byName(store, 'Saçımı kestirdim');
+        expect(created.icon, 'scissors');
+        expect(created.every, 30);
+        expect(find.byType(CardTile), findsOneWidget);
+      });
+    },
+  );
+
+  testWidgets('the profile shows the stats and saves a name', (tester) async {
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      await tester.tap(find.bySemanticsLabel('Profil'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Toplam kart'), findsOneWidget);
+      expect(find.text('Toplam kayıt'), findsOneWidget);
+      expect(find.text('En düzenli yaptığın'), findsOneWidget);
+      expect(find.text('En uzun süredir yapmadığın'), findsOneWidget);
+
+      await tester.tap(find.text('Adını ekle'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, 'Eyüp Baykara');
+      await tester.tap(find.text('Kaydet'));
+      await tester.pumpAndSettle();
+
+      expect(store.profile.name, 'Eyüp Baykara');
+      expect(find.text('EB'), findsOneWidget);
+    });
+  });
+
+  testWidgets('settings reset the dragged order back to urgency', (
+    tester,
+  ) async {
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      store.reorder(['fresh', 'late']);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.bySemanticsLabel('Profil'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Ayarlar'));
+      await tester.pumpAndSettle();
+      await tapText(tester, 'Sıralamayı sıfırla');
+
+      expect(store.hasManualOrder, isFalse);
+      expect(store.cards.map((c) => c.id), ['late', 'fresh']);
+    });
+  });
+
+  testWidgets('the new-card form can mark a card for reminders', (tester) async {
+    final fake = FakeReminders();
+    await runHome(tester, [freshCard], (store) async {
+      await tester.tap(find.text('Yeni kart'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'anneme telefon ettim');
+      await tester.pumpAndSettle();
+      await tapText(tester, 'Haftada bir');
+
+      expect(find.text('Bana hatırlat'), findsWidgets);
+      expect(find.textContaining('saat 09:00 civarı'), findsOneWidget);
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+      expect(fake.permissionAsks, 1);
+
+      await tapText(tester, 'Kartı oluştur');
+
+      final created = byName(store, 'Anneme telefon ettim');
+      expect(created.notify, isTrue);
+      expect(created.every, 7);
+      // Recorded today, weekly: due in 7 days at 09:00, plus the follow-up.
+      final mine = fake.plan.where((r) => r.cardId == created.id).toList();
+      expect(mine.length, 2);
+      expect(mine.first.title, 'Anneme telefon ettim');
+      expect(mine.first.body, '7 gündür yapmadın, sırası geldi. Hedefin haftada bir.');
+    }, reminders: fake);
+  });
+
+  testWidgets('a refused permission leaves the switch off and says why', (tester) async {
+    final fake = FakeReminders(granted: false);
+    await runHome(tester, [freshCard], (store) async {
+      await tester.tap(find.text('Yeni kart'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'ilaç aldım');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+      expect(find.textContaining('Bildirim izni kapalı'), findsOneWidget);
+    }, reminders: fake);
+  });
+
+  testWidgets('reminders can be switched from the card menu', (tester) async {
+    final fake = FakeReminders();
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      await tester.tap(find.text('Bitkileri suladım'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Kart seçenekleri'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Bana hatırlat'));
+      await tester.pumpAndSettle();
+
+      expect(store.byId('fresh')!.notify, isTrue);
+      expect(fake.plan.any((r) => r.cardId == 'fresh'), isTrue);
+
+      await tester.tap(find.bySemanticsLabel('Kart seçenekleri'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hatırlatmayı kapat'));
+      await tester.pumpAndSettle();
+      expect(store.byId('fresh')!.notify, isFalse);
+      expect(fake.plan, isEmpty);
+    }, reminders: fake);
+  });
+
+  testWidgets('tapping a notification opens that card', (tester) async {
+    final fake = FakeReminders();
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      expect(find.text('Geçmiş'), findsNothing);
+      fake.tapController.add('fresh');
+      await tester.pumpAndSettle();
+      expect(find.text('Geçmiş'), findsOneWidget);
+      expect(find.text('Bitkileri suladım'), findsWidgets);
+      expect(store.openCardRequest.value, isNull);
+    }, reminders: fake);
+  });
+
+  testWidgets('a notification that launched the app opens its card', (tester) async {
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      expect(find.text('Geçmiş'), findsOneWidget);
+    }, reminders: FakeReminders(launchedWith: 'late'));
+  });
+
+  testWidgets('settings: reminder time and the test notification', (tester) async {
+    final fake = FakeReminders();
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      await tester.tap(find.bySemanticsLabel('Profil'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Ayarlar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('09:00'), findsOneWidget);
+      store.setReminderTime(20, 30);
+      await tester.pumpAndSettle();
+      expect(find.text('20:30'), findsOneWidget);
+
+      await tapText(tester, 'Test bildirimi gönder');
+      expect(fake.shown.length, 1);
+      expect(fake.shown.first.$2, contains('sırası geldi'));
+    }, reminders: fake);
+  });
+
+  testWidgets('with nothing overdue there is no status pill at all', (tester) async {
+    await runHome(tester, [freshCard], (store) async {
+      expect(find.textContaining('gecikti'), findsNothing);
+      expect(find.text('her şey yerinde'), findsNothing);
+      expect(find.text('Kaç gün oldu?'), findsOneWidget);
+    });
+  });
+
+  testWidgets('the layout button switches grid and list, and the choice sticks', (
+    tester,
+  ) async {
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      expect(find.byType(CardRowTile), findsNothing);
+      expect(find.byType(CardTile), findsNWidgets(2));
+
+      await tester.tap(find.bySemanticsLabel('Liste görünümü'));
+      await tester.pumpAndSettle();
+      expect(store.layout, CardLayout.list);
+      expect(find.byType(CardRowTile), findsNWidgets(2));
+      expect(find.byType(CardTile), findsNothing);
+      // Same numbers, one row each, full width.
+      expect(find.text('gün oldu'), findsNWidgets(2));
+      final width = tester.getSize(find.byType(CardRowTile).first).width;
+      expect(width, greaterThan(300));
+
+      // A row still opens its card.
+      await tester.tap(find.text('Bitkileri suladım'));
+      await tester.pumpAndSettle();
+      expect(find.text('Geçmiş'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Geri'));
+      await tester.pumpAndSettle();
+
+      // Remembered across a restart.
+      final reopened = CardStore();
+      await reopened.init();
+      expect(reopened.layout, CardLayout.list);
+      reopened.dispose();
+
+      await tester.tap(find.bySemanticsLabel('Izgara görünümü'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CardTile), findsNWidgets(2));
+      expect(store.layout, CardLayout.grid);
+    });
+  });
+
+  testWidgets('a theme picked in settings recolours the app', (tester) async {
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      try {
+        await tester.tap(find.bySemanticsLabel('Profil'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.bySemanticsLabel('Ayarlar'));
+        await tester.pumpAndSettle();
+        await tapText(tester, 'Tema');
+        await tester.tap(find.bySemanticsLabel('Gece teması'));
+        await tester.pumpAndSettle();
+
+        expect(store.themeId, 'gece');
+        expect(AppColor.surface, paletteById('gece').surface);
+
+        // Back on the grid, the overdue card is drawn in the new primary.
+        for (var i = 0; i < 3; i++) {
+          await tester.tap(find.bySemanticsLabel('Geri').first);
+          await tester.pumpAndSettle();
+        }
+        final tile = find.descendant(
+          of: find.byType(CardTile).first,
+          matching: find.byType(Container),
+        );
+        final colors = tester
+            .widgetList<Container>(tile)
+            .map((c) => c.color)
+            .whereType<Color>();
+        expect(colors, contains(paletteById('gece').primary));
+      } finally {
+        AppColor.current = kiremit;
+      }
     });
   });
 

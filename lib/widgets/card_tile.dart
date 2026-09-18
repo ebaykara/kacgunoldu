@@ -4,16 +4,28 @@ import '../domain/card.dart' show Tier;
 import '../domain/logic.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
+import 'card_glyph.dart';
+import 'card_status.dart';
 import 'day_count.dart';
 import 'halo.dart';
 import 'rhythm_ring.dart';
 
-/// The core component: one tracked thing.
+/// The day count's size on a grid card. One size for every card — a
+/// three-digit count fits beside "gün oldu" at this size, so numbers never
+/// shrink card by card and a row of cards reads on one level.
+const double tileCountSize = 52;
+
+/// The core component: one tracked thing, as a grid card.
 ///
-/// The whole tile is a single button (MD3 filled/tonal card with a state
-/// layer; HIG grouped card at 26pt radius). Colour is derived from the tier,
-/// but the `8 gün geç` tag and the ring carry the same information in words
-/// and numbers, so overdue is never signalled by colour alone.
+/// One hierarchy, top to bottom:
+///  * the glyph, ringed by the rhythm ring — progress as a shape, no text;
+///  * the name, full width, up to two lines;
+///  * the day count — the only number on the card — with "gün oldu" on its
+///    baseline;
+///  * one status line: "3 gün kaldı", "Bugün sırası", "8 gün geçti".
+///
+/// Colour comes from the tier, so overdue still reads at a glance. The whole
+/// tile is a single button.
 class CardTile extends StatefulWidget {
   const CardTile({
     super.key,
@@ -24,13 +36,17 @@ class CardTile extends StatefulWidget {
     this.celebrateNonce,
     this.showRing = true,
     required this.reduceMotion,
+    this.width,
   });
+
+  /// The tile's width in the grid (kept for callers; the layout no longer
+  /// depends on it).
+  final double? width;
 
   final DecoratedCard card;
   final VoidCallback onTap;
 
-  /// Long press starts a drag (reordering the grid). Omitted where dragging
-  /// doesn't apply — the filtered overdue view keeps the automatic sort.
+  /// Long press starts a drag (reordering the grid).
   final VoidCallback? onLongPress;
 
   /// True while this card is the one being dragged — it lifts off the grid.
@@ -58,24 +74,15 @@ class _CardTileState extends State<CardTile>
   /// scale(1) -> 1.045 -> 0.985 -> 1, matching the CSS keyframes.
   late final Animation<double> _popScale = TweenSequence<double>([
     TweenSequenceItem(
-      tween: Tween(
-        begin: 1.0,
-        end: 1.045,
-      ).chain(CurveTween(curve: Motion.emphasized)),
+      tween: Tween(begin: 1.0, end: 1.045).chain(CurveTween(curve: Motion.emphasized)),
       weight: 30,
     ),
     TweenSequenceItem(
-      tween: Tween(
-        begin: 1.045,
-        end: 0.985,
-      ).chain(CurveTween(curve: Motion.emphasized)),
+      tween: Tween(begin: 1.045, end: 0.985).chain(CurveTween(curve: Motion.emphasized)),
       weight: 32,
     ),
     TweenSequenceItem(
-      tween: Tween(
-        begin: 0.985,
-        end: 1.0,
-      ).chain(CurveTween(curve: Motion.emphasized)),
+      tween: Tween(begin: 0.985, end: 1.0).chain(CurveTween(curve: Motion.emphasized)),
       weight: 38,
     ),
   ]).animate(_pop);
@@ -97,22 +104,22 @@ class _CardTileState extends State<CardTile>
 
   @override
   Widget build(BuildContext context) {
-    final palette = tiers[widget.card.stats.tier]!;
-    final stats = widget.card.stats;
+    final card = widget.card;
+    final stats = card.stats;
+    final tier = stats.tier;
+    final palette = tiers[tier]!;
+    final ink = palette.ink;
+    final status = CardStatus.of(card);
     final nonce = widget.celebrateNonce;
-
-    final tagInk = stats.tier == Tier.late
-        ? palette.ink
-        : const Color(0xFFFFFFFF);
+    final glyph = CardGlyph(iconKey: iconKeyOf(card.card), color: ink, size: 18);
 
     return Semantics(
       button: true,
-      label:
-          '${widget.card.name}, ${stats.days} gün önce'
+      label: '${card.name}, ${stats.days} gün önce'
           '${stats.isLate ? ', geç' : ''}. ${stats.ringHint}',
       hint: widget.onLongPress != null
-          ? 'işaretlemek için dokun, yer değiştirmek için basılı tutup sürükle'
-          : 'işaretlemek için dokun',
+          ? 'ayrıntılar için dokun, yer değiştirmek için basılı tutup sürükle'
+          : 'ayrıntılar için dokun',
       child: GestureDetector(
         onTap: widget.onTap,
         onLongPress: widget.onLongPress,
@@ -135,163 +142,80 @@ class _CardTileState extends State<CardTile>
               borderRadius: BorderRadius.circular(Radii.card),
               boxShadow: widget.isDragging
                   ? Elevation.dragging
-                  : stats.tier == Tier.late
-                  ? Elevation.cardLate
-                  : Elevation.card,
+                  : tier == Tier.late
+                      ? Elevation.cardLate
+                      : Elevation.card,
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(Radii.card),
               child: Container(
                 color: palette.bg,
-                constraints: const BoxConstraints(
-                  minHeight: Layout.cardMinHeight,
-                ),
-                padding: const EdgeInsets.fromLTRB(
-                  Space.s15,
-                  Space.s15,
-                  Space.s15,
-                  Space.s14,
-                ),
+                constraints: const BoxConstraints(minHeight: Layout.cardMinHeight),
+                padding: const EdgeInsets.fromLTRB(Space.s16, Space.s16, Space.s16, Space.s15),
                 child: Stack(
                   children: [
                     if (nonce != null && !widget.reduceMotion)
                       Positioned.fill(
-                        child: Center(
-                          child: Halo(color: palette.ring, nonce: nonce),
-                        ),
+                        child: Center(child: Halo(color: palette.ring, nonce: nonce)),
                       ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        LayoutBuilder(
-                          builder: (context, constraints) => Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      widget.card.name,
-                                      style: ui(
-                                        13.5,
-                                        weight: FontWeight.w600,
-                                        color: palette.ink,
-                                        height: 1.3,
-                                        letterSpacing: 13.5 * -0.008,
-                                      ),
-                                    ),
-                                    const SizedBox(height: Space.s6),
-                                    // One line, never wrapped: the interval and
-                                    // the date belong together. Shrinks a touch
-                                    // before truncating, since the "geç" tag can
-                                    // crowd this line.
-                                    FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        stats.meta,
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        style: ui(
-                                          10.5,
-                                          weight: FontWeight.w500,
-                                          color: palette.ink.withValues(
-                                            alpha: 0.72,
-                                          ),
-                                          height: 1.35,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (stats.isLate) ...[
-                                const SizedBox(width: Space.s8),
-                                // Never let the tag take more than its share —
-                                // the card name has to stay readable beside it.
-                                ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    maxWidth:
-                                        (constraints.maxWidth - Space.s8) * 0.5,
-                                  ),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: Space.xs,
-                                      horizontal: 9,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: palette.tag,
-                                      borderRadius: BorderRadius.circular(
-                                        Radii.pill,
-                                      ),
-                                    ),
-                                    // Spells out *why* — "8 gün geç" reads on its
-                                    // own, without a separate sentence elsewhere.
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        '${-(stats.remaining ?? 0)} gün geç',
-                                        maxLines: 1,
-                                        style: ui(
-                                          9.5,
-                                          weight: FontWeight.w700,
-                                          color: tagInk,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: Space.s8),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Expanded(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.bottomLeft,
-                                child: Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.baseline,
-                                  textBaseline: TextBaseline.alphabetic,
-                                  children: [
-                                    DayCount(
-                                      value: stats.days,
-                                      color: palette.ink,
-                                      reduceMotion: widget.reduceMotion,
-                                    ),
-                                    const SizedBox(width: Space.xs),
-                                    Text(
-                                      'gün',
-                                      style: ui(
-                                        12,
-                                        weight: FontWeight.w600,
-                                        color: palette.ink.withValues(
-                                          alpha: 0.66,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            if (widget.showRing) ...[
-                              const SizedBox(width: Space.s8),
+                            if (widget.showRing)
                               RhythmRing(
                                 pct: stats.pct,
                                 ring: palette.ring,
                                 track: palette.track,
-                                ink: palette.ink,
+                                ink: ink,
                                 label: stats.ringLabel,
                                 reduceMotion: widget.reduceMotion,
+                                size: 40,
+                                center: glyph,
+                              )
+                            else
+                              glyph,
+                            const SizedBox(height: Space.s12),
+                            Text(
+                              card.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: ui(
+                                14.5,
+                                weight: FontWeight.w600,
+                                color: ink,
+                                height: 1.25,
+                                letterSpacing: 14.5 * -0.008,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: Space.s14),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            DayCountLine(
+                              card: card,
+                              size: tileCountSize,
+                              color: ink,
+                              reduceMotion: widget.reduceMotion,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              status.text,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: ui(
+                                12.5,
+                                weight: status.urgent ? FontWeight.w700 : FontWeight.w500,
+                                color: status.color(tier, palette),
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -305,4 +229,86 @@ class _CardTileState extends State<CardTile>
       ),
     );
   }
+}
+
+/// "46 gün oldu": the day count with its unit on the number's baseline.
+/// A card with no record yet shows a dash instead of a zero.
+///
+/// Never wraps (a three-digit number once split across lines); in the rare
+/// case it can't fit — four digits, a very large text size — it scales down
+/// as a whole rather than breaking.
+class DayCountLine extends StatelessWidget {
+  const DayCountLine({
+    super.key,
+    required this.card,
+    required this.size,
+    required this.color,
+    required this.reduceMotion,
+  });
+
+  final DecoratedCard card;
+  final double size;
+  final Color color;
+  final bool reduceMotion;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasRecs = card.card.recs.isNotEmpty;
+    final scaler = MediaQuery.textScalerOf(context);
+    final numberStyle = dayCountStyle(size, hasRecs ? color : color.withValues(alpha: 0.4));
+    // An explicit line height: left unset it inherits the surrounding
+    // DefaultTextStyle's (Material's is 1.43), and the measured descent below
+    // would not match the drawn one.
+    final unitStyle = ui(
+      size * 0.24,
+      weight: FontWeight.w600,
+      color: color.withValues(alpha: 0.6),
+      height: 1.2,
+    );
+
+    // The unit sits on the number's baseline. Aligned by measured padding
+    // (the difference between the two line boxes' descents) rather than
+    // CrossAxisAlignment.baseline: a baseline row's height isn't reported to
+    // IntrinsicHeight, which the grid relies on, and the card overflowed.
+    final gap = _descentOf(numberStyle, scaler) - _descentOf(unitStyle, scaler);
+
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.bottomLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(bottom: gap < 0 ? -gap : 0),
+            child: hasRecs
+                ? DayCount(value: card.stats.days, color: color, reduceMotion: reduceMotion, size: size)
+                : Text('—', maxLines: 1, style: numberStyle),
+          ),
+          const SizedBox(width: 6),
+          Padding(
+            padding: EdgeInsets.only(bottom: gap > 0 ? gap : 0),
+            child: Text(
+              hasRecs ? 'gün oldu' : 'kayıt yok',
+              maxLines: 1,
+              softWrap: false,
+              style: unitStyle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// How far a single line's box extends below its alphabetic baseline.
+double _descentOf(TextStyle style, TextScaler scaler) {
+  final painter = TextPainter(
+    text: TextSpan(text: '0', style: style),
+    textDirection: TextDirection.ltr,
+    textScaler: scaler,
+  )..layout();
+  final descent = painter.height - painter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+  painter.dispose();
+  return descent;
 }

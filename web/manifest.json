@@ -1,11 +1,11 @@
 {
-    "name": "ne_zaman",
-    "short_name": "ne_zaman",
+    "name": "Kaç Gün Oldu?",
+    "short_name": "Kaç Gün Oldu?",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FBF5F0",
+    "theme_color": "#B8492A",
+    "description": "Kaç gün oldu? — bir şeyi en son ne zaman yaptığını takip eden uygulama.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

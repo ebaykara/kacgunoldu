@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ne_zaman/domain/text.dart';
+import 'package:kac_gun_oldu/domain/text.dart';
 
 void main() {
   group('capitalizeTr', () {

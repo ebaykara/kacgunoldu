@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ne_zaman/domain/card.dart';
-import 'package:ne_zaman/storage/repository.dart';
+import 'package:kac_gun_oldu/domain/card.dart';
+import 'package:kac_gun_oldu/storage/repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -39,12 +39,11 @@ void main() {
   });
 
   group('card persistence', () {
-    test('seeds on first launch and writes the seed back', () async {
-      final cards = await repository.loadCards();
-      expect(cards, isNotEmpty);
-      // The seed is now on disk, so a second read returns the same names.
-      final again = await repository.loadCards();
-      expect(again.map((c) => c.name), cards.map((c) => c.name));
+    test('a first launch starts empty — no made-up example cards', () async {
+      expect(await repository.loadCards(), isEmpty);
+      // Nothing was written on the way.
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('nezaman.cards.v1'), isNull);
     });
 
     test('round-trips cards', () async {
@@ -84,12 +83,11 @@ void main() {
       expect(loaded.map((c) => c.id), ['ok']);
     });
 
-    test('falls back to the seed when the payload is not a list', () async {
+    test('an unreadable payload gives an empty list, not example cards', () async {
       SharedPreferences.setMockInitialValues({
         'nezaman.cards.v1': jsonEncode({'oops': true}),
       });
-      final loaded = await repository.loadCards();
-      expect(loaded, isNotEmpty);
+      expect(await repository.loadCards(), isEmpty);
     });
   });
 }

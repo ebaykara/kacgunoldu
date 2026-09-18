@@ -22,36 +22,39 @@ class TierPalette {
   final Color tag;
 }
 
-const tiers = <Tier, TierPalette>{
-  Tier.fresh: TierPalette(
-    bg: AppColor.tertiaryContainer,
-    ink: AppColor.onTertiaryContainer,
-    ring: AppColor.tertiary,
-    track: Color(0x211F2A14), // rgba(31,42,20,.13)
-    tag: AppColor.tertiary,
-  ),
-  Tier.calm: TierPalette(
-    bg: AppColor.surfaceBright,
-    ink: AppColor.onSurface,
-    ring: AppColor.primaryDim,
-    track: Color(0x1A241F1B), // rgba(36,31,27,.10)
-    tag: AppColor.primaryDim,
-  ),
-  Tier.soon: TierPalette(
-    bg: AppColor.primaryContainer,
-    ink: AppColor.onPrimaryContainer,
-    ring: AppColor.primary,
-    track: Color(0x243A0C00), // rgba(58,12,0,.14)
-    tag: AppColor.primary,
-  ),
-  Tier.late: TierPalette(
-    bg: AppColor.primary,
-    ink: AppColor.onPrimary,
-    ring: AppColor.ringOnPrimary,
-    track: Color(0x47FFF3EA), // rgba(255,243,234,.28)
-    tag: Color(0x38FFF3EA), // rgba(255,243,234,.22)
-  ),
-};
+/// Rebuilt from [AppColor] on each read so a theme change takes effect.
+/// Tracks are the tier's ink at low alpha (rgba(31,42,20,.13) etc. in the
+/// default theme).
+Map<Tier, TierPalette> get tiers => {
+      Tier.fresh: TierPalette(
+        bg: AppColor.tertiaryContainer,
+        ink: AppColor.onTertiaryContainer,
+        ring: AppColor.tertiary,
+        track: AppColor.onTertiaryContainer.withValues(alpha: 0.13),
+        tag: AppColor.tertiary,
+      ),
+      Tier.calm: TierPalette(
+        bg: AppColor.surfaceBright,
+        ink: AppColor.onSurface,
+        ring: AppColor.primaryDim,
+        track: AppColor.onSurface.withValues(alpha: 0.10),
+        tag: AppColor.primaryDim,
+      ),
+      Tier.soon: TierPalette(
+        bg: AppColor.primaryContainer,
+        ink: AppColor.onPrimaryContainer,
+        ring: AppColor.primary,
+        track: AppColor.onPrimaryContainer.withValues(alpha: 0.14),
+        tag: AppColor.primary,
+      ),
+      Tier.late: TierPalette(
+        bg: AppColor.primary,
+        ink: AppColor.onPrimary,
+        ring: AppColor.ringOnPrimary,
+        track: AppColor.onPrimary.withValues(alpha: 0.28),
+        tag: AppColor.onPrimary.withValues(alpha: 0.22),
+      ),
+    };
 
 /// Day offsets of a card's records, ascending in age (`[0]` = most recent).
 List<int> offsetsOf(Card card, DateKey today) =>
@@ -124,11 +127,14 @@ class CardStats {
 CardStats statsFor(Card card, DateKey today) {
   final offsets = offsetsOf(card, today);
   final days = offsets.isNotEmpty ? offsets[0] : 0;
-  final typical = typicalInterval(offsets);
+  // A declared rhythm ("haftada bir") is the person's own answer and wins;
+  // otherwise the interval is learned from the records.
+  final typical = card.every ?? typicalInterval(offsets);
   final ratio = typical != null && typical != 0
       ? days / typical
       : math.min(0.95, days / 30);
-  final isLate = typical != null && days > typical * 1.25 + 1;
+  final isLate =
+      typical != null && card.recs.isNotEmpty && days > typical * 1.25 + 1;
   final tier = isLate
       ? Tier.late
       : ratio > 0.95
@@ -140,7 +146,7 @@ CardStats statsFor(Card card, DateKey today) {
 
   // Always the same shape — last date + the learned interval — whether the
   // card is late or not. The overdue amount already lives in the ring
-  // (`+8 gün`) and in the `8 gün geç` tag; repeating it here in a third
+  // (`+8 gün`) and in the `8 gün gecikti` tag; repeating it here in a third
   // phrasing was the confusing part.
   //
   // No "·" between the two halves — it read as a stray line. A plain space is
@@ -161,7 +167,8 @@ CardStats statsFor(Card card, DateKey today) {
   // is due today, `+8 gün` means it is eight days past the usual interval, and
   // `yeni` means the card has not learned an interval yet. The arc is the same
   // value drawn as progress through the interval.
-  final remaining = typical == null ? null : typical - days;
+  final remaining =
+      typical == null || card.recs.isEmpty ? null : typical - days;
   final ringLabel = remaining == null
       ? 'yeni'
       : remaining > 0
@@ -213,4 +220,12 @@ List<DecoratedCard> orderCards(List<DecoratedCard> cards) {
   final rest = cards.where((c) => !c.stats.isLate).toList()
     ..sort((a, b) => b.stats.ratio.compareTo(a.stats.ratio));
   return [...late, ...rest];
+}
+
+/// Mean gap between consecutive records, rounded — the "Ortalama" figure.
+/// Unlike [typicalInterval] a single gap is enough; `null` with none.
+int? averageGap(Card card, DateKey today) {
+  final offsets = offsetsOf(card, today);
+  if (offsets.length < 2) return null;
+  return ((offsets.last - offsets.first) / (offsets.length - 1)).round();
 }

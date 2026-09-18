@@ -48,7 +48,7 @@ class _FabState extends State<Fab> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const PlusIcon(color: AppColor.onPrimary),
+                  PlusIcon(color: AppColor.onPrimary),
                   const SizedBox(width: Space.s8),
                   Text(
                     'Yeni kart',

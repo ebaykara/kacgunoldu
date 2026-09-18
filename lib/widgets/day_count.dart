@@ -6,6 +6,15 @@ import '../theme/typography.dart';
 /// The card's headline number.
 const double dayCountSize = 58;
 
+/// The day number's style — shared so the card can line "gün oldu" up with
+/// the number's baseline.
+TextStyle dayCountStyle(double size, Color color) => display(
+      size,
+      color: color,
+      height: 0.86,
+      letterSpacing: size * -0.02,
+    );
+
 /// The big day number.
 ///
 /// On a record it counts down from the old value to the new one over 620ms
@@ -19,7 +28,11 @@ class DayCount extends StatelessWidget {
     required this.value,
     required this.color,
     required this.reduceMotion,
+    this.size = dayCountSize,
   });
+
+  /// Point size; the grid uses [dayCountSize], the detail page goes bigger.
+  final double size;
 
   final int value;
   final Color color;
@@ -27,12 +40,7 @@ class DayCount extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = display(
-      dayCountSize,
-      color: color,
-      height: 0.86,
-      letterSpacing: dayCountSize * -0.02,
-    );
+    final style = dayCountStyle(size, color);
 
     // Reduce motion: swap the value outright. An AnimatedSwitcher would wrap
     // the number in a Stack, and a Stack reports no text baseline — which

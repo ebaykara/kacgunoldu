@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
+import '../theme/tokens.dart';
+
 /// Ask before something irreversible.
 ///
 /// iOS gets a Cupertino action sheet with a destructive role and Android a
@@ -53,7 +55,7 @@ Future<bool> confirmDestructive(
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(true),
-          style: TextButton.styleFrom(foregroundColor: const Color(0xFFB8492A)),
+          style: TextButton.styleFrom(foregroundColor: AppColor.primary),
           child: Text(confirmLabel),
         ),
       ],

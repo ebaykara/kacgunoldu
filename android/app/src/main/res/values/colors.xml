@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#B8492A</color>
+    <!-- The launch screen colour per colour theme. Mirrors Palette.launchColor
+         in lib/theme/tokens.dart (palette_test.dart checks they agree). Used by
+         the system launch screen (styles) and by the animation view in
+         MainActivity, which picks the saved theme's colour. -->
+    <color name="launch_kiremit">#F85D4F</color>
+    <color name="launch_okyanus">#3D7FC1</color>
+    <color name="launch_orman">#4C9A5C</color>
+    <color name="launch_lavanta">#8460D0</color>
+    <color name="launch_gul">#E0507B</color>
+    <color name="launch_gece">#171412</color>
+    <color name="splashBackground">@color/launch_kiremit</color>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The ring sweeps in, then the question mark rises through its gap and
+     fades up - the app icon assembling itself. It plays the moment Android
+     shows the launch screen, i.e. while the app is still starting; the app's
+     own LaunchOverlay (lib/widgets/launch_overlay.dart) picks up from where
+     this leaves off. Keep both timelines in step (~1.4s). -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_splash_mark">
+    <target android:name="ring" android:animation="@animator/splash_ring" />
+    <target android:name="mark" android:animation="@animator/splash_mark_rise" />
+    <target android:name="q" android:animation="@animator/splash_mark_fade" />
+</animated-vector>

@@ -1,5 +1,5 @@
-name: ne_zaman
-description: "En son ne zaman? — bir şeyi en son ne zaman yaptığını takip eden uygulama."
+name: kac_gun_oldu
+description: "Kaç gün oldu? — bir şeyi en son ne zaman yaptığını takip eden uygulama."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -10,17 +10,28 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Turkish month/day names in the date picker and system dialogs.
+  flutter_local_notifications: ^22.3.1
+  flutter_localizations:
+    sdk: flutter
 
   # Local-first storage. No backend — the whole app lives on the device.
+  flutter_timezone: ^5.1.0
   shared_preferences: ^2.3.3
+  timezone: ^0.11.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/icon/
+    - assets/fonts/OFL.txt
 
   # Bundled rather than fetched at runtime: the serif/sans contrast carries the
   # product's character, so a system-font flash on first paint is not acceptable.
@@ -41,3 +52,37 @@ flutter:
           weight: 700
         - asset: assets/fonts/Archivo_800ExtraBold.ttf
           weight: 800
+
+# The app icon: the rhythm ring (see widgets/rhythm_ring.dart) on the app's
+# own terracotta, a small gap centered at 12 o'clock — the same shape and
+# colours the ring draws inside the app, so the icon reads as "this app"
+# rather than a generic mark. `dart run flutter_launcher_icons` regenerates
+# every platform's assets from these sources; re-run it after editing them.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  # The App Store rejects an icon that carries an alpha channel at all, even
+  # fully opaque — the source PNG has one (RGBA), so it has to be stripped
+  # for the iOS set specifically.
+  remove_alpha_ios: true
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21
+  # Adaptive icon (Android 8+): background layer + a foreground layer inset
+  # to the OS's safe zone, so the ring survives circle/squircle/rounded-square
+  # masks without clipping.
+  adaptive_icon_background: "assets/icon/icon_background.png"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  # Android 13+ themed (monochrome) icon: the OS tints this itself, so it
+  # has to be a plain silhouette, not the two-colour mark.
+  adaptive_icon_monochrome: "assets/icon/icon_monochrome.png"
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#FBF5F0"
+    theme_color: "#B8492A"
+
+# The splash screen is NOT generated. It is hand-written Android: a launcher
+# SplashActivity plays the animated logo (avd_splash_mark.xml) while the Flutter
+# engine loads, then MainActivity fades it out once the app has drawn.
+# Running `flutter_native_splash:create` would overwrite those files, which is
+# why there is no config block here.

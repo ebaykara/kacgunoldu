@@ -237,3 +237,44 @@ class _ChevronPainter extends CustomPainter {
   @override
   bool shouldRepaint(_ChevronPainter old) => old.color != color || old.open != open;
 }
+
+/// Head and shoulders, for an avatar with no name yet.
+class PersonIcon extends StatelessWidget {
+  const PersonIcon({super.key, required this.color, this.size = 18});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+        size: Size.square(size),
+        painter: _PersonPainter(color),
+      );
+}
+
+class _PersonPainter extends CustomPainter {
+  _PersonPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 18;
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.7 * s
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(Offset(9 * s, 6 * s), 3.3 * s, stroke);
+    canvas.drawArc(
+      Rect.fromCenter(center: Offset(9 * s, 17 * s), width: 13 * s, height: 11 * s),
+      3.14159,
+      3.14159,
+      false,
+      stroke,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_PersonPainter old) => old.color != color;
+}

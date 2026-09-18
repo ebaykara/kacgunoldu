@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{title}} — {{brand}}</title>
+  <meta name="description" content="{{description}}" />
+  <link rel="icon" href="/kacgunoldu/icon.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/kacgunoldu/icon.png" />
+  <link rel="canonical" href="{{canonical}}" />
+{{hreflang}}
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --background: oklch(0.977 0.008 92);
+      --foreground: oklch(0.19 0.008 265);
+      --surface: oklch(0.958 0.011 92);
+      --card: oklch(0.995 0.004 92);
+      --muted-foreground: oklch(0.53 0.012 265);
+      --accent: oklch(0.64 0.19 27);
+      --accent-soft: oklch(0.955 0.03 32);
+      --accent-foreground: oklch(0.99 0.005 32);
+      --border: oklch(0.895 0.008 92);
+      --border-strong: oklch(0.82 0.012 92);
+      --radius: 0.875rem;
+      --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+      --font-display: "Bricolage Grotesque", "Inter", sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+    }
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* Contour pattern */
+    .contour {
+      background-image:
+        repeating-radial-gradient(circle at 12% 18%, transparent 0 46px, oklch(0.19 0.008 265 / 7%) 46px 47px),
+        repeating-radial-gradient(circle at 88% 72%, transparent 0 58px, oklch(0.19 0.008 265 / 5%) 58px 59px);
+    }
+
+    /* Header */
+    .header-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 50;
+      height: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+      max-width: 76rem;
+      margin: 0 auto;
+    }
+    @media (min-width: 768px) { .header-bar { padding: 0 2rem; } }
+
+    .brand-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      border-radius: 9999px;
+      background-color: color-mix(in srgb, var(--background) 70%, transparent);
+      backdrop-filter: blur(12px);
+      padding: 0.25rem 1rem 0.25rem 0.25rem;
+      border: 1px solid var(--border);
+    }
+    .brand-pill img { width: 2rem; height: 2rem; border-radius: 0.5rem; object-fit: cover; }
+    .brand-pill span { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; letter-spacing: -0.04em; }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 9999px;
+      background-color: color-mix(in srgb, var(--background) 70%, transparent);
+      backdrop-filter: blur(12px);
+      padding: 0.375rem 1rem;
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted-foreground);
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: var(--foreground); }
+
+    /* Hero / Top section */
+    .hero-sec {
+      position: relative;
+      padding: 8rem 1.25rem 3rem;
+      max-width: 56rem;
+      margin: 0 auto;
+    }
+    @media (min-width: 768px) { .hero-sec { padding-top: 9rem; } }
+
+    .badge-mono {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background-color: var(--accent-soft);
+      border-radius: 9999px;
+      padding: 0.35rem 0.9rem;
+      margin-bottom: 1.25rem;
+      font-weight: 600;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.25rem, 5vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin-bottom: 1rem;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--muted-foreground);
+      margin-bottom: 2rem;
+    }
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      padding: 0.35rem 0.85rem;
+      font-weight: 500;
+    }
+    .meta-dot { width: 6px; height: 6px; border-radius: 50%; background-color: var(--accent); }
+
+    /* Document card wrapper */
+    .doc-container {
+      max-width: 56rem;
+      margin: 0 auto;
+      padding: 0 1.25rem 6rem;
+    }
+
+    .lead-box {
+      font-size: 1.125rem;
+      line-height: 1.7;
+      color: var(--foreground);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: calc(var(--radius) + 6px);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 1px 3px oklch(0.2 0.01 265 / 0.06);
+    }
+
+    .doc-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 12px);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px oklch(0.2 0.01 265 / 0.06);
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .num-pill {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 0.25rem 0.6rem;
+      border-radius: 0.5rem;
+    }
+
+    h3 {
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 1.25rem 0 0.5rem;
+      color: var(--foreground);
+    }
+
+    p { color: var(--muted-foreground); margin-bottom: 0.75rem; font-size: 0.95rem; line-height: 1.65; }
+    p strong { color: var(--foreground); }
+    p:last-child { margin-bottom: 0; }
+
+    ul { list-style: none; padding: 0; margin-bottom: 1rem; }
+    ul li {
+      position: relative;
+      padding-left: 1.25rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+      color: var(--muted-foreground);
+    }
+    ul li::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .callout-box {
+      background: var(--accent-soft);
+      border: 1px solid oklch(0.64 0.19 27 / 25%);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      font-size: 0.9375rem;
+    }
+    .callout-box a { color: var(--accent); font-weight: 600; text-decoration: underline; }
+
+    .contact-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+    .contact-card .brand-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.125rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .contact-card .row { display: flex; align-items: center; gap: 1rem; font-size: 0.875rem; }
+    .contact-card .label {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted-foreground);
+      width: 70px;
+    }
+    .contact-card a { color: var(--accent); font-weight: 600; }
+
+    /* Footer */
+    footer {
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      background-color: var(--surface);
+      padding: 3.5rem 1.25rem 8rem;
+    }
+    .footer-inner {
+      max-width: 76rem;
+      margin: 0 auto;
+      position: relative;
+    }
+    .footer-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+    .footer-logo { display: flex; align-items: center; gap: 0.625rem; }
+    .footer-logo img { width: 2rem; height: 2rem; border-radius: 0.5rem; object-fit: cover; }
+    .footer-logo span { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; }
+    .footer-tagline { margin-top: 1rem; max-width: 46ch; font-size: 0.875rem; color: var(--muted-foreground); }
+
+    .footer-links { display: flex; flex-wrap: wrap; gap: 1.5rem; list-style: none; }
+    .footer-links a {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted-foreground);
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--foreground); }
+
+    .footer-bar {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fixed Header -->
+  <header class="header-bar">
+    <a href="https://gezip.app" class="brand-pill" aria-label="{{brand}}">
+      <img src="/kacgunoldu/icon.png" alt="{{brand}} logo" />
+      <span>{{brand}}</span>
+    </a>
+    <div style="display:flex;align-items:center;gap:0.625rem;">
+      <a href="{{alt_path}}" class="back-btn" hreflang="{{alt_lang}}">{{alt_label}}</a>
+      <a href="https://gezip.app" class="back-btn">← gezip.app</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-sec">
+      <div class="badge-mono">{{badge}}</div>
+      <h1>{{h1}}</h1>
+      <div class="meta-row">
+{{chips}}
+      </div>
+    </section>
+
+    <!-- Document Content -->
+    <div class="doc-container">
+{{lead}}
+{{sections}}
+    </div>
+  </main>
+
+  <!-- Site Footer -->
+  <footer>
+    <div class="contour" style="position:absolute; inset:0; opacity:0.4; pointer-events:none;"></div>
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div>
+          <div class="footer-logo">
+            <img src="/kacgunoldu/icon.png" alt="{{brand}} logo" />
+            <span>{{brand}}</span>
+          </div>
+          <p class="footer-tagline">{{tagline}}</p>
+        </div>
+        <ul class="footer-links">
+{{footer_links}}
+        </ul>
+      </div>
+      <div class="footer-bar">
+        <span>© 2026 {{brand}} · EMA Labs</span>
+        <span>gezip.app</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ne_zaman/domain/card.dart';
-import 'package:ne_zaman/domain/date.dart';
-import 'package:ne_zaman/domain/logic.dart';
-import 'package:ne_zaman/widgets/draggable_card_grid.dart';
+import 'package:kac_gun_oldu/domain/card.dart';
+import 'package:kac_gun_oldu/domain/date.dart';
+import 'package:kac_gun_oldu/domain/logic.dart';
+import 'package:kac_gun_oldu/widgets/draggable_card_grid.dart';
 
 const today = '2026-09-18';
 

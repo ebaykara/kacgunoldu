@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resources that are only ever looked up by name at run time, so the
+     release build's resource shrinker can't see them used and would strip
+     them. Without this, in a release build:
+       - ic_notification is gone and every reminder silently fails to show
+         (flutter_local_notifications resolves the icon by name);
+       - launch_<theme> colours and LaunchTheme.<Theme> styles are gone, and
+         the launch screen ignores the colour theme (LaunchScreen.kt,
+         MainActivity.kt use getIdentifier). -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notification,@color/launch_*,@style/LaunchTheme*,@drawable/avd_splash_mark,@drawable/ic_splash_mark,@animator/splash_*" />

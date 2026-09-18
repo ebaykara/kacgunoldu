@@ -1,0 +1,111 @@
+# Codemagic — Kaç Gün Oldu?
+#
+# iOS → TestFlight / App Store is the first target. The Android workflow is
+# there for later (Play Console) and can be ignored until then.
+#
+# One-time setup (Codemagic UI → Teams → Integrations):
+#   1. App Store Connect API key: add it under "Developer Portal", name it
+#      exactly `kacgunoldu_asc` (or change `integrations.app_store_connect`).
+#      Key role: App Manager or Admin.
+#   2. In App Store Connect create the app record with bundle id
+#      `com.emalabs.kacgunoldu`; its numeric "Apple ID" goes into the env var
+#      APP_STORE_APPLE_ID (Codemagic → app → Environment variables, group
+#      `appstore`, or just replace the value below).
+#   3. Push this repo, add it in Codemagic, choose "codemagic.yaml".
+# Certificates and the provisioning profile are created by Codemagic itself
+# through the API key (ios_signing: distribution_type app_store).
+
+definitions:
+  flutter_version: &flutter_version stable
+
+workflows:
+  ios-app-store:
+    name: iOS · App Store
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    integrations:
+      app_store_connect: kacgunoldu_asc
+    environment:
+      flutter: *flutter_version
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.emalabs.kacgunoldu
+      vars:
+        BUNDLE_ID: com.emalabs.kacgunoldu
+        # Numeric Apple ID of the app in App Store Connect (App Information).
+        APP_STORE_APPLE_ID: "0000000000"
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: "v*"
+          include: true
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Analyze and test
+        script: |
+          flutter analyze
+          flutter test
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Build IPA
+        script: |
+          # The build number always grows: the highest one App Store Connect
+          # (TestFlight) knows, plus one. The version name comes from pubspec.
+          BUILD_NUMBER=$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID") + 1))
+          flutter build ipa --release \
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - flutter_drive.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Goes to TestFlight; submit for review from App Store Connect.
+        submit_to_testflight: true
+        submit_to_app_store: false
+
+  android-play:
+    name: Android · Play Store
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      flutter: *flutter_version
+      java: 17
+      android_signing:
+        # Codemagic → Teams → Code signing identities → Android keystores:
+        # upload kacgunoldu-upload.jks, reference name below.
+        - kacgunoldu_upload
+      vars:
+        PACKAGE_NAME: com.emalabs.kacgunoldu
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: "android-v*"
+          include: true
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Analyze and test
+        script: |
+          flutter analyze
+          flutter test
+      - name: Write key.properties from the Codemagic keystore
+        script: |
+          cat > android/key.properties <<EOF
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyPassword=$CM_KEY_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          storeFile=$CM_KEYSTORE_PATH
+          EOF
+      - name: Build app bundle
+        script: |
+          flutter build appbundle --release \
+            --build-number=$(($(date +%s) / 60 - 29000000))
+    artifacts:
+      - build/app/outputs/bundle/release/*.aab

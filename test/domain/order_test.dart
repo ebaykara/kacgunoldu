@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ne_zaman/domain/card.dart';
-import 'package:ne_zaman/domain/date.dart';
-import 'package:ne_zaman/domain/order.dart';
+import 'package:kac_gun_oldu/domain/card.dart';
+import 'package:kac_gun_oldu/domain/date.dart';
+import 'package:kac_gun_oldu/domain/order.dart';
 
 const today = '2026-09-18';
 

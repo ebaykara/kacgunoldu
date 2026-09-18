@@ -1,31 +1,52 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import '../domain/date.dart';
 import '../domain/logic.dart';
 import '../domain/text.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
-import 'icons.dart';
+import 'ui.dart';
 
 /// "Ne zaman yaptın?" — the record sheet.
 ///
-/// Three quick picks plus the last fourteen days. Picking anything records
-/// immediately and closes; there is no confirm step. Deleting the card lives
-/// here too (the trash action), because long-press on the card itself now
-/// starts a drag.
+/// Three quick picks plus the last fourteen days, and a full calendar for
+/// anything older. Picking anything records immediately and closes; there is
+/// no confirm step. Deleting the card lives on the detail page's menu.
+///
+/// Also used by the card form to pick the first date ([card] is `null`
+/// there), where [onNotYet] offers creating the card with no record at all.
 class RecordSheet extends StatelessWidget {
   const RecordSheet({
     super.key,
     required this.card,
     required this.today,
     required this.onPick,
-    required this.onDelete,
+    this.onNotYet,
+    this.selectedOffset,
   });
 
-  final DecoratedCard card;
+  final DecoratedCard? card;
   final DateKey today;
   final ValueChanged<int> onPick;
-  final VoidCallback onDelete;
+  final VoidCallback? onNotYet;
+
+  /// Highlights the currently chosen day (card form).
+  final int? selectedOffset;
+
+  Future<void> _pickFromCalendar(BuildContext context) async {
+    final now = fromDateKey(today);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(now.year - 30),
+      lastDate: now,
+      helpText: 'Ne zaman yaptın?',
+      cancelText: 'Vazgeç',
+      confirmText: 'Seç',
+    );
+    if (picked == null) return;
+    onPick(daysSince(toDateKey(picked), today));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,42 +73,25 @@ class RecordSheet extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Text(
-                upperTr('Ne zaman yaptın?'),
-                style: overline(color: AppColor.outline),
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'Kartı sil',
-              child: GestureDetector(
-                onTap: onDelete,
-                behavior: HitTestBehavior.opaque,
-                child: const Padding(
-                  padding: EdgeInsets.all(Space.s8),
-                  child: TrashIcon(color: AppColor.outline),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: Space.s6),
-        Semantics(
-          header: true,
-          child: Text(
-            card.name,
-            style: display(26, color: AppColor.onSurface, height: 1.14),
-          ),
-        ),
-        const SizedBox(height: 3),
         Text(
-          card.stats.meta,
-          style: ui(12.5, color: AppColor.onSurfaceVariant),
+          upperTr('Ne zaman yaptın?'),
+          style: overline(color: AppColor.outline),
         ),
+        if (card != null) ...[
+          const SizedBox(height: Space.s6),
+          Semantics(
+            header: true,
+            child: Text(
+              card!.name,
+              style: display(26, color: AppColor.onSurface, height: 1.14),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            card!.stats.meta,
+            style: ui(12.5, color: AppColor.onSurfaceVariant),
+          ),
+        ],
         const SizedBox(height: Space.s15),
         Row(
           children: [
@@ -98,7 +102,9 @@ class RecordSheet extends StatelessWidget {
                   onTap: () => onPick(quick[i].offset),
                   pressedScale: 0.96,
                   semanticsLabel: '${quick[i].label}, ${quick[i].sub}',
-                  color: AppColor.primaryContainer,
+                  color: selectedOffset == quick[i].offset
+                      ? AppColor.primaryContainerHover
+                      : AppColor.primaryContainer,
                   radius: Radii.tile,
                   minHeight: Layout.minTouchTarget + 14,
                   padding: const EdgeInsets.symmetric(
@@ -148,7 +154,9 @@ class RecordSheet extends StatelessWidget {
                       onTap: () => onPick(c.offset),
                       pressedScale: 0.94,
                       semanticsLabel: '${c.offset} gün önce, ${c.dow} ${c.dom}',
-                      color: AppColor.surfaceContainer,
+                      color: selectedOffset == c.offset
+                          ? AppColor.primaryContainer
+                          : AppColor.surfaceContainer,
                       radius: Radii.dayCell,
                       // Padded to the 44pt minimum touch target even though
                       // the mock draws the cell visually shorter.
@@ -173,6 +181,26 @@ class RecordSheet extends StatelessWidget {
               ],
             );
           },
+        ),
+        const SizedBox(height: Space.s12),
+        Row(
+          children: [
+            Expanded(
+              child: QuietButton(
+                label: 'Takvimden seç',
+                icon: Icons.calendar_month_outlined,
+                onTap: () => _pickFromCalendar(context),
+              ),
+            ),
+            if (onNotYet != null)
+              Expanded(
+                child: QuietButton(
+                  label: 'Henüz yapmadım',
+                  icon: Icons.hourglass_empty_rounded,
+                  onTap: onNotYet!,
+                ),
+              ),
+          ],
         ),
       ],
     );

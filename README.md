@@ -1,6 +1,6 @@
-# Ne Zaman? — Flutter
+# Kaç Gün Oldu? — Flutter
 
-*En son ne zaman?* — tek soruya cevap veren mobil uygulama: **bunu en son ne zaman yaptım?**
+*Kaç gün oldu?* — tek soruya cevap veren mobil uygulama: **bunu en son ne zaman yaptım?**
 
 Uygulama `Ne Zaman v2.dc.html` hifi tasarımından birebir kodlanmıştır: aynı renkler,
 aynı ölçüler, aynı hareket süreleri, aynı Türkçe metinler.
