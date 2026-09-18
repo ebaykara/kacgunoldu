@@ -66,8 +66,7 @@ workflows:
           fi
           # Accepts the raw PEM as well as its base64 form.
           case "$CERTIFICATE_PRIVATE_KEY" in
-            "-----BEGIN"*) printf '%s
-' "$CERTIFICATE_PRIVATE_KEY" > /tmp/cert_key.pem ;;
+            "-----BEGIN"*) echo "$CERTIFICATE_PRIVATE_KEY" > /tmp/cert_key.pem ;;
             *) echo "$CERTIFICATE_PRIVATE_KEY" | openssl base64 -d -A > /tmp/cert_key.pem ;;
           esac
           test -s /tmp/cert_key.pem
