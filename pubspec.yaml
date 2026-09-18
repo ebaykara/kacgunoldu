@@ -30,7 +30,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/icon/
     - assets/fonts/OFL.txt
 
   # Bundled rather than fetched at runtime: the serif/sans contrast carries the
