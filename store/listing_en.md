@@ -2,7 +2,7 @@
 
 ## App name (max 30 characters)
 
-Kaç Gün Oldu? – Last Time
+Kaç Gün Oldu? Days Since
 
 ## Short description (max 80 characters)
 

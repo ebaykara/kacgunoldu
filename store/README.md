@@ -6,7 +6,8 @@ gereken her şeyi içerir. Kodla ilgili hazırlık tamam; aşağıdaki adımlar 
 
 | Dosya | Ne işe yarar |
 | --- | --- |
-| `listing_tr.md` / `listing_en.md` | Mağaza sayfası: ad, kısa ve tam açıklama (karakter sınırları kontrol edildi) |
+| `aso_appstore.md` | **App Store** ASO metinleri (TR+EN): ad, alt başlık, anahtar kelimeler, tanıtım, açıklama, başlıklar |
+| `listing_tr.md` / `listing_en.md` | Play Store sayfası: ad, kısa ve tam açıklama (karakter sınırları kontrol edildi) |
 | `play_console_answers.md` | "Uygulama içeriği" formlarının hazır cevapları (veri güvenliği, derecelendirme, hedef kitle…) |
 | `legal/content.py` · `legal/build.py` | Gizlilik politikası, kullanım koşulları, destek (TR + EN) — **tek kaynak**; uygulama içi ekranları ve gezip.app sayfalarını üretir |
 | `privacy_policy.md` | Eski düz metin kopya (yalnızca okuma; güncel olan `legal/content.py`) |

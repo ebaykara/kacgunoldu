@@ -185,6 +185,3 @@ başlıklarını `captions.txt`'ten okur.
    fazla 2-3 kelimeyi değiştir ki neyin işe yaradığını görebil).
 3. Arama tanıtımı (Apple Search Ads) için küçük bir bütçeyle `gün sayacı`, `alışkanlık takibi`,
    `hatırlatıcı` gibi kelimelerin gerçek arama hacmini test edebilirsin.
-```
-
-`

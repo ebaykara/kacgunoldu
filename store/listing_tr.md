@@ -2,7 +2,7 @@
 
 ## Uygulama adı (en fazla 30 karakter)
 
-Kaç Gün Oldu?
+Kaç Gün Oldu? Gün Sayacı
 
 ## Kısa açıklama (en fazla 80 karakter)
 
