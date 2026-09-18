@@ -12,8 +12,14 @@
 #      APP_STORE_APPLE_ID (Codemagic → app → Environment variables, group
 #      `appstore`, or just replace the value below).
 #   3. Push this repo, add it in Codemagic, choose "codemagic.yaml".
-# Certificates and the provisioning profile are created by Codemagic itself
-# through the API key (ios_signing: distribution_type app_store).
+#   4. Signing: the certificate and the App Store profile are created through the
+#      API key by the "Set up code signing" step. It needs a private key once:
+#        ssh-keygen -t rsa -b 2048 -m PEM -f cert_key -q -N ""
+#      Put the whole content of `cert_key` (incl. the BEGIN/END lines) into
+#      Codemagic → app → Environment variables → CERTIFICATE_PRIVATE_KEY (Secure).
+#      Keep `cert_key` safe, never commit it. If the certificate limit is reached
+#      ("maximum number of certificates"), delete an old Distribution certificate
+#      in the Apple developer portal.
 
 definitions:
   flutter_version: &flutter_version stable
@@ -29,9 +35,6 @@ workflows:
       flutter: *flutter_version
       xcode: latest
       cocoapods: default
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.emalabs.kacgunoldu
       vars:
         BUNDLE_ID: com.emalabs.kacgunoldu
         # Numeric Apple ID of the app in App Store Connect (App Information).
@@ -50,7 +53,14 @@ workflows:
           flutter analyze
           flutter test
       - name: Set up code signing
-        script: xcode-project use-profiles
+        # Creates the distribution certificate and the App Store profile through
+        # the App Store Connect API key when they don't exist yet.
+        # CERTIFICATE_PRIVATE_KEY: secure env var, see the header.
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID"             --type IOS_APP_STORE             --create             --certificate-key "$CERTIFICATE_PRIVATE_KEY"
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Build IPA
         script: |
           # The build number always grows: the highest one App Store Connect
