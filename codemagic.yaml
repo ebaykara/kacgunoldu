@@ -57,12 +57,15 @@ workflows:
         # the App Store Connect API key when they don't exist yet.
         # CERTIFICATE_PRIVATE_KEY: secure env var, see the header.
         script: |
+          set -ex
           keychain initialize
           # The key is stored base64-encoded (a multi-line PEM breaks in env vars).
           echo "$CERTIFICATE_PRIVATE_KEY" | openssl base64 -d -A > /tmp/cert_key.pem
           app-store-connect fetch-signing-files "$BUNDLE_ID"             --type IOS_APP_STORE             --certificate-key=@file:/tmp/cert_key.pem             --create
           keychain add-certificates
           xcode-project use-profiles
+      - name: Install CocoaPods
+        script: find . -name "Podfile" -execdir pod install \;
       - name: Build IPA
         script: |
           # The build number always grows: the highest one App Store Connect
