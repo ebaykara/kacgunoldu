@@ -1,90 +1,71 @@
-# Ne Zaman?
+# Ne Zaman? — Flutter
 
-*En son ne zaman?* — tek soruya cevap veren bir mobil uygulama: **bunu en son ne zaman yaptım?**
+*En son ne zaman?* — tek soruya cevap veren mobil uygulama: **bunu en son ne zaman yaptım?**
 
-Takip etmek istediğin her şey için bir kart açarsın. Her yaptığında karta dokunur,
-tarihi seçersin; kart sıfırlanır ve yeniden gün saymaya başlar. Uygulama her kartın
-**tipik aralığını** (kayıtlar arasındaki boşlukların medyanı) öğrenir, kartı ona göre
-renklendirir ve geciktiğinde işaretler. Seri yok, hedef yok, puan yok.
+Uygulama `Ne Zaman v2.dc.html` hifi tasarımından birebir kodlanmıştır: aynı renkler,
+aynı ölçüler, aynı hareket süreleri, aynı Türkçe metinler.
 
-`design_handoff_ne_zaman/` paketindeki **`Ne Zaman v2.dc.html`** kanonik tasarımının
-birebir uygulamasıdır.
+Proje önce React Native/Expo ile yazıldı, sonra Flutter/Dart'a aktarıldı. React
+Native sürümü artık çalışma ağacında değil; `25734ff` commit'inde duruyor ve
+gerekirse oradan çıkarılabilir:
+
+```bash
+git show 25734ff --stat
+```
 
 ## Çalıştırma
 
 ```bash
-npm install
+flutter pub get
 ```
 
 ```bash
-npx expo start
+flutter run
 ```
 
-Ardından iOS için `i`, Android için `a`, tarayıcı için `w`. Doğrudan:
+Telefon USB ile bağlıysa doğrudan ona kurar. Tarayıcıda denemek için:
 
 ```bash
-npm run ios
+flutter run -d chrome
 ```
 
-```bash
-npm run android
-```
+Analiz ve testler:
 
 ```bash
-npm run web
-```
-
-Tip kontrolü ve testler:
-
-```bash
-npx tsc --noEmit
+flutter analyze
 ```
 
 ```bash
-npm test
+flutter test
 ```
 
-Testler `src/domain/__tests__/` ve `src/storage/__tests__/` içinde: medyan/gecikme
-kuralı, kademe eşikleri, meta satırının tutarlılığı, kayıtsız kart durumu, gece
-yarısı devri, Türkçe büyütme kuralı, kalıcı sürükle-bırak sıralaması (`applyOrder`)
-ve `AsyncStorage` üzerinden manuel sıra kalıcılığı — 34 test.
-
-`app.json` değiştirdiysen Metro'nun önbelleğini temizleyerek başlat — yoksa
-uygulama boş ekranda kalabilir:
-
-```bash
-npx expo start --clear
-```
-
-## Neden Expo / React Native
-
-Handoff "hazır bir kod tabanı yoksa bu tür bir mobil uygulama için en uygun
-framework'ü seç" diyor. Expo + TypeScript seçildi: tek koddan iOS + Android
-(+ doğrulama için web), yerel bir Material 3 / HIG eşlemesi ve ekstra SDK kurulumu
-gerektirmeyen bir geliştirme akışı.
+**64 test**, `flutter analyze` temiz, `flutter build apk --debug` başarılı.
 
 ## Mimari
 
 ```
-App.tsx                     fontlar + splash + SafeAreaProvider
-src/
+lib/
+  main.dart                 tema, sistem çubukları, yazı boyutu sınırı
   theme/
-    tokens.ts               renk, boşluk, yarıçap, gölge, hareket — handoff'tan birebir
-    typography.ts           Instrument Serif (display) + Archivo (UI) yardımcıları
+    tokens.dart             renk, boşluk, yarıçap, gölge, hareket — handoff'tan birebir
+    typography.dart         Instrument Serif (display) + Archivo (UI)
   domain/
-    date.ts                 yerel takvim günü aritmetiği, Türkçe tarih biçimleri
-    logic.ts                tipik aralık, ratio, gecikme, kademe, meta satırı
-    types.ts                Card / Tier / Filter / Tab
+    card.dart               Card / Tier / AppTab modelleri + JSON doğrulaması
+    date.dart               yerel takvim günü aritmetiği, Türkçe tarih biçimleri
+    logic.dart              tipik aralık, ratio, gecikme, kademe, halka, meta satırı
+    text.dart               Türkçe büyük harf kuralları (i → İ, ı → I)
+    order.dart              otomatik aciliyet sırası + kalıcı sürükleme sırası
   storage/
-    repository.ts           AsyncStorage kalıcılığı (şema doğrulamalı)
-    seed.ts                 ilk açılış içeriği (mock'taki dokuz kart)
+    seed.dart               ilk açılış içeriği (mock'taki dokuz kart)
+    repository.dart         shared_preferences kalıcılığı
   state/
-    useCardStore.ts         kartlar, kayıt, geri alma, snackbar, gece yarısı yenileme
-  components/               CardTile, RhythmRing, Halo, DayCount, Sheet,
-                            RecordSheet, CreateSheet, TabBar, Fab, Snackbar,
-                            Timeline, FilterChips, Header, EmptyState, icons
+    card_store.dart         ChangeNotifier: kayıt, geri alma, silme, sıralama, gece yarısı
+  widgets/                  card_tile, rhythm_ring, halo, day_count, app_sheet,
+                            record_sheet, create_sheet, draggable_card_grid,
+                            bottom_tab_bar, header, fab, app_snackbar, timeline,
+                            empty_state, icons, confirm_destructive
   screens/
-    HomeScreen.tsx          tüm ekranı birleştirir
+    home_screen.dart        tüm ekranı birleştirir
 ```
 
 **Hiçbir türetilmiş değer saklanmaz.** Kalıcı olan tek şey `{ id, name, recs }`;
@@ -95,127 +76,82 @@ src/
 | Değer | Kural |
 | --- | --- |
 | `days` | `recs[0]` ile bugün arasındaki tam takvim günü |
-| `gaps[i]` | `offsets[i+1] - offsets[i]` |
 | `typical` | `median(gaps)` — **iki boşluktan azsa `null`** (yani üç kayıttan az) |
 | `ratio` | `days / typical`, `typical` yoksa `min(0.95, days / 30)` |
-| `overdue` | `typical !== null && days > typical * 1.25 + 1` |
+| `isLate` | `typical != null && days > typical * 1.25 + 1` |
 | kademe | `late` → `soon` (`ratio > 0.95`) → `fresh` (`ratio < 0.5`) → `calm` |
-| halka % | `clamp(3, round(ratio * 100), 100)` |
+| `remaining` | `typical - days` — halkadaki `4 gün` / `bugün` / `+8 gün` |
 
 `+1` payı, kısa aralıklı kartların (üç günde bir sulanan bitkiler) tek günlük
-gecikmede "geç" damgası yemesini engeller. `typical`'ın iki boşluk şartı da yeni
-bir kartın asla gecikmiş sayılmamasını garanti eder.
+gecikmede "geç" damgası yemesini engeller.
 
 ### Takvim günü, 24 saat değil
 
 Gün sayıları cihazın yerel saat diliminde **takvim günü** sınırlarında hesaplanır.
-`today` gece yarısı bir zamanlayıcıyla ve uygulama öne geldiğinde yeniden okunur,
-böylece kart dokunmadan 24 saat sonra değil, gece yarısı devreder. Her iki taraf da
-yerel gece yarısına normalize edildiği için yaz saati geçişleri sonucu bozmaz.
+`today`, gece yarısı bir `Timer` ile ve uygulama öne geldiğinde
+(`didChangeAppLifecycleState`) yeniden okunur. Her iki uç da yerel gece yarısına
+normalize edildiği için yaz saati geçişleri sonucu bozmaz.
 
-## Tasarım eşlemesi
+## React Native sürümünden farklar
 
-| Tasarım öğesi | Material 3 | Apple HIG | Bu kod |
-| --- | --- | --- | --- |
-| Başlık | Large top app bar | Large title | `Header` (sabit, kaymaz) |
-| Kart | Tonal card + state layer | Grouped card, 26pt | `CardTile` |
-| Yeni kart | Extended FAB | Prominent button | `Fab` |
-| Tarih seçici | Modal bottom sheet | Sheet + grabber | `Sheet` + `RecordSheet` |
-| Kaydedildi · Geri al | Snackbar + action | Toast + Undo | `Snackbar` |
-| Kartlar / Zaman tüneli | Navigation bar | Tab bar | `TabBar` |
+Davranış ve görünüm aynı; altyapı Flutter'ın kendi araçlarına taşındı:
 
-- **Ritim halkası** mock'ta bir conic gradient; burada `react-native-svg` ile
-  kırpılmış yay olarak çizilir, 12 yönünden saat yönünde, 500ms'de dolar.
-- **Gölgeler** CSS `box-shadow` dizeleri olarak birebir taşınır (negatif spread
-  dahil), yaklaşık bir iOS gölge üçlüsüne indirgenmez.
-- **Sayaç animasyonu** 620ms, `1-(1-p)³`, her karede yuvarlanır ve yalnızca ilgili
-  kartın içinde yaşar — kayıt sırasında ızgara yeniden render edilmez.
-- **Izgara yeniden sıralaması** `react-native-draggable-flatlist` ile
-  sürüklenir (numColumns=2); bırakılan düzen `AsyncStorage`'a kalıcı olarak
-  kaydedilir ve otomatik aciliyet sıralamasının yerini alır.
+| Konu | React Native | Flutter |
+| --- | --- | --- |
+| Kalıcılık | `AsyncStorage` | `shared_preferences` |
+| Durum | `useState` + custom hook | `ChangeNotifier` (`CardStore`) |
+| Ritim halkası | `react-native-svg` yay | `CustomPainter` yay |
+| İkonlar | inline SVG | `CustomPainter` |
+| Bottom sheet | özel `Animated` + `PanResponder` | `PopupRoute` + dikey sürükleme |
+| Sürükle-bırak | `react-native-draggable-flatlist` | `LongPressDraggable` + `DragTarget` (kendi kodumuz) |
+| Silme onayı | `Alert.alert` / `window.confirm` | `CupertinoAlertDialog` (iOS) / `AlertDialog` |
+| Blur | `expo-blur` | `BackdropFilter` |
+| Yazı boyutu sınırı | `maxFontSizeMultiplier` | `MediaQuery.withClampedTextScaling` |
+
+Sürükle-bırak için harici paket yerine kendi uygulamamız var: ızgara iki sabit
+sütun ve tek tip bir widget, üstelik böylece sürükleme jesti kartın zaten sahip
+olduğu dokunma ve uzun basma jestleriyle çakışmıyor. Kayıt bırakıldığı anda tam
+id dizisi `shared_preferences`'a yazılır.
+
+## Aktarım sırasında yakalanan ve düzeltilen üç hata
+
+Testler, RN sürümünde fark edilmemiş üç sorunu ortaya çıkardı:
+
+1. **Yeni kart sayfası açılışta çöküyordu.** `TextField` bir `Material` atası
+   ister; sayfa kabuğu sade `Container`'lardan oluşuyordu. Kabuk artık gerçek
+   bir `Material` (`app_sheet.dart`).
+2. **Gün sayısı satır kutusu iki katına çıkıyordu.** `TextHeightBehavior` ile
+   `applyHeightToFirstAscent/LastDescent` kapatılınca Flutter `height: 0.86`'yı
+   tümden yok sayıp font metriklerine düşüyordu; 58pt sayı 100pt yer kaplıyor,
+   kart 168 yerine 414 piksel oluyordu.
+3. **Üç haneli sayı rakam rakam alt satıra kayıyordu** (`214` → `2`/`1`/`4`).
+   Sayı + `gün` grubu artık tek satırda ve sığmazsa orantılı küçülüyor.
 
 ## Erişilebilirlik
 
-- Her kart tek bir düğmedir: `"{ad}, {n} gün önce"` + halkanın tam açıklaması
-  (`"her zamanki aralığı 8 gün aştı"`), ipucu draggable ızgarada
-  `"işaretlemek için dokun, yer değiştirmek için basılı tutup sürükle"`.
-- Gecikme yalnızca renkle anlatılmaz — kartın üstündeki `8 gün geç` etiketi
-  nedeni doğrudan yazar, halkadaki `+8 gün` de aynı sayıyı taşır.
-- Dokunma hedefleri ≥ 44pt: gün hücreleri yüksekliğe kadar doldurulur, çipler
-  tasarımdaki 37pt görünümünü koruyup `hitSlop` ile hedefi büyütür.
-- Dinamik tip `maxFontSizeMultiplier` ile sınırlanarak desteklenir (46pt seri rakam
-  ızgarayı taşırmasın diye).
-- **Reduce motion** açıkken hale ve sayaç animasyonu atlanır, yerine çapraz geçiş
-  kullanılır; halka ve sayfa animasyonları anında tamamlanır.
-- Snackbar `accessibilityLiveRegion="polite"` ile duyurulur.
+- Her kart tek bir düğmedir: `"{ad}, {n} gün önce, geç. her zamanki aralığı 8 gün aştı"`,
+  ipucu `"işaretlemek için dokun, yer değiştirmek için basılı tutup sürükle"`.
+- Gecikme yalnızca renkle anlatılmaz — `8 gün geç` etiketi nedeni yazar, halkadaki
+  `+8 gün` aynı sayıyı taşır.
+- Dokunma hedefleri ≥ 44pt (gün hücreleri yüksekliğe kadar doldurulur).
+- Sistem yazı boyutu desteklenir, 1.3x'te sınırlanır.
+- **Reduce motion** açıkken hale, sayaç ve sayfa animasyonları atlanır.
+- Snackbar `liveRegion` ile duyurulur.
 
-## Tasarımdan ayrılan yerler
+## Test kapsamı
 
-Handoff'un üstüne istenen ürün değişiklikleri:
-
-1. **Başlıktaki alt metin kaldırıldı.** `En son ne zaman?` altındaki açıklama satırı
-   yok; başlık bloğu tarih + geciken rozeti + başlıktan ibaret.
-2. **Kart düzeni.** Kart adının hemen altında `~{n} günde bir` açıklaması tek satır
-   (kelime kaymaz — bkz. madde 4), gün sayısı ise kartın altında ve daha büyük
-   (46 → **58pt**). Ritim halkası sayının sağında kalır.
-3. **Filtre çip sırası (`Tümü` / `Gecikenler` / `Taze`) tamamen kaldırıldı.**
-   Tek kalan filtre başlıktaki rozet: dokununca gecikenleri gösterir, tekrar
-   dokununca tam ızgaraya döner. `Taze` filtresi kaldırıldığı için `domain/types.ts`
-   içindeki `Filter` türü de silindi.
-4. **Meta satırı: tek satır, aradaki çizgi yok.** `{tarih} · ~{aralık} günde bir`
-   yerine `{tarih} ~{aralık} günde bir` — orta nokta kaldırıldı, `günde` ve `bir`
-   arası bölünmez boşlukla (` `) birleştirildi, `Text` `numberOfLines={1}`;
-   native'de sıkışınca `adjustsFontSizeToFit` ile küçülür (web'de eşdeğeri
-   olmadığı için orada kırpılır). Gecikme miktarı zaten halkada (`+8 gün`) ve artık
-   ayrıca `geç` etiketinde (`8 gün geç`); burada tekrar etmek kafa karıştırıyordu.
-5. **Halka etiketi anlamlı hale getirildi.** Eski `/36` ve `%367` yerine
-   `4 gün` (kalan gün) · `bugün` · `+8 gün` (aşılan gün) · `yeni`. Ekran okuyucu
-   için tam cümle: `"her zamanki aralığa 4 gün kaldı"` / `"...8 gün aştı"`.
-6. **`geç` etiketi nedenini kendisi açıklar.** Salt `GEÇ` yerine `8 gün geç` —
-   kartın üstündeki tek bakışta, ayrı bir cümleye ihtiyaç kalmadan.
-7. **"{n} kart bekliyor" → "{n} kart gecikti" ve tıklanabilir.** Rozet bir düğme:
-   dokununca sadece geciken kartları gösterir, tekrar dokununca tam ızgaraya
-   döner. Geciken yokken düz bir durum etiketi olarak kalır.
-8. **Kartlar tutulup sürüklenerek yeniden sıralanabilir, kalıcı olarak.**
-   `react-native-draggable-flatlist` ile uzun basıp sürükleme; bırakılan tam id
-   dizisi `AsyncStorage`'a yazılır (`src/storage/repository.ts`'teki
-   `loadManualOrder`/`saveManualOrder`, `src/domain/order.ts`'teki `applyOrder`).
-   Hiç sürüklenmemişse ızgara otomatik aciliyet sırasında kalır (geciken önce,
-   sonra en yakın vadeli); ilk sürükleme anından itibaren bırakılan düzen kalıcı
-   olarak kazanır. Yeni oluşturulan bir kart, henüz kayıtlı düzende yer almadığı
-   için en öne düşer — bir kartın her zaman en üstte açılması davranışıyla aynı.
-   Sürükleme sadece filtrelenmemiş ana ızgarada etkin; `Gecikenler` görünümü
-   geçici bir alt küme olduğu için otomatik sıralamada kalır ve sürüklenemez.
-9. **Silme, karttan kayıt sayfasına taşındı.** Kart artık uzun basınca sürüklenir
-   (yeniden sıralama), o yüzden "basılı tut = sil" gestüsü kalktı. Silmek için
-   karta dokunup açılan "Ne zaman yaptın?" sayfasının sağ üstündeki çöp kutusu
-   ikonuna dokun — aynı onay diyaloğu (`Vazgeç` / `Sil`) oradan açılır.
-10. **Kart adı Türkçe kurala göre büyütülür.** Öneri çipleri küçük harf kalır
-   (`çamaşır yıkadım`) — alan hâlâ kendi cümlen gibi okunsun diye. Kaydedilen
-   kart adının ilk harfi `src/domain/text.ts`'teki `capitalizeTr` ile
-   büyütülür: `i` → `İ` (noktalı), `ı` büyütülünce noktasız `I` olur —
-   `String.toUpperCase()` bunu yanlış yapardı.
-11. **Yeni kart sayfası.** Öneri çipleri en sık unutulan on işe genişletildi. Butonlar:
-    - `Ekle ve tarih seç` — kartı kayıtsız oluşturur ve hemen kayıt sayfasını açar.
-    - `Bugün itibariyle ekle` — kartı bugünü işaretleyerek oluşturur.
-
-    Kanonik prototipte iki buton da bugünü işaretliyordu (`recs: [offset === null ? 0 :
-    offset]`), yani aynı sonucu veriyorlardı; yeni etiketler bunu gerçekten ayırıyor.
-    Kayıtsız kart meşru bir durum: `yeni` halka etiketi ve `Henüz işaretlenmedi` meta
-    satırıyla görünür ve asla gecikmiş sayılmaz.
-
-Ayrıca iki veri kararı:
-
-- **İlk açılış içeriği.** Mock'taki dokuz kart `src/storage/seed.ts` içinde, gerçek
-  ilk açılış tarihine göre çözülür; böylece kademeler ve gecikmeler tasarımdaki gibi
-  görünür. Uygulamanın boş başlaması isteniyorsa o dosyadaki `SEED` dizisini boşalt.
-- **Aynı güne iki kayıt.** Veri modeli gün çözünürlüğünde olduğu için aynı gün
-  tekrar işaretlemek tek kayıt sayılır; aksi halde 0 uzunluğunda bir boşluk medyanı
-  bozardı. Kayıtlar sıralı eklenir, yani eski bir tarih seçmek gün sayısını değiştirmez.
+- `test/domain/` — medyan/gecikme kuralı, kademe eşikleri, halka etiketi, meta
+  satırı, takvim günü aritmetiği, gece yarısı devri, hafta günü eşlemesi,
+  Türkçe büyük harf kuralları, sıralama mantığı.
+- `test/storage/` — kart ve sıra kalıcılığı, bozuk veriden kurtarma.
+- `test/widgets/` — kart düzeni ve yüksekliği, geç etiketi, **sürükle-bırak
+  yeniden sıralama** (uzun bas → sürükle → bırak).
+- `test/screens/` — kart açma, tarih seçme, geri alma, onaylı silme, kart
+  oluşturma (iki buton), gecikenler filtresi, zaman tüneli, sıranın yeniden
+  açılışta korunması.
 
 ## Fontlar
 
-`Instrument Serif` ve `Archivo` `@expo-google-fonts/*` ile **paketlenir**, çalışma
-anında indirilmez. Uygulama her ikisi de yüklenene kadar splash'i açık tutar; seri /
-sans karşıtlığı ürünün karakterini taşıdığı için sistem fontuyla bir kare bile
-gösterilmez.
+`Instrument Serif` ve `Archivo` `assets/fonts/` altında **paketlenir**, çalışma
+anında indirilmez — seri/sans karşıtlığı ürünün karakterini taşıdığı için sistem
+fontuyla bir kare bile gösterilmez.
