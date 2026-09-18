@@ -28,6 +28,10 @@ workflows:
     integrations:
       app_store_connect: Codemagic
     environment:
+      groups:
+        # Shared with the other apps: holds CERTIFICATE_PRIVATE_KEY (raw PEM or
+        # base64). Reusing it avoids a new distribution certificate.
+        - ios_signing
       flutter: *flutter_version
       xcode: latest
       cocoapods: default
