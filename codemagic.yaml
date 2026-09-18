@@ -60,7 +60,17 @@ workflows:
           set -ex
           keychain initialize
           # The key is stored base64-encoded (a multi-line PEM breaks in env vars).
-          echo "$CERTIFICATE_PRIVATE_KEY" | openssl base64 -d -A > /tmp/cert_key.pem
+          if [ -z "$CERTIFICATE_PRIVATE_KEY" ]; then
+            echo "HATA: CERTIFICATE_PRIVATE_KEY tanimli degil (ios_signing grubu bu uygulamaya bagli degil ya da degisken yok)."
+            exit 1
+          fi
+          # Accepts the raw PEM as well as its base64 form.
+          case "$CERTIFICATE_PRIVATE_KEY" in
+            "-----BEGIN"*) printf '%s
+' "$CERTIFICATE_PRIVATE_KEY" > /tmp/cert_key.pem ;;
+            *) echo "$CERTIFICATE_PRIVATE_KEY" | openssl base64 -d -A > /tmp/cert_key.pem ;;
+          esac
+          test -s /tmp/cert_key.pem
           app-store-connect fetch-signing-files "$BUNDLE_ID"             --type IOS_APP_STORE             --certificate-key=@file:/tmp/cert_key.pem             --create
           keychain add-certificates
           xcode-project use-profiles
