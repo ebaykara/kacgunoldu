@@ -38,7 +38,7 @@ workflows:
       vars:
         BUNDLE_ID: com.emalabs.kacgunoldu
         # Numeric Apple ID of the app in App Store Connect (App Information).
-        APP_STORE_APPLE_ID: "0000000000"
+        APP_STORE_APPLE_ID: "6813693710"
     triggering:
       events:
         - tag
