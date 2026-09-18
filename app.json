@@ -1,25 +1,38 @@
 {
   "expo": {
-    "name": "ne_zaman",
-    "slug": "ne_zaman",
+    "name": "Ne Zaman?",
+    "slug": "ne-zaman",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "nezaman",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#FBF5F0",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nezaman.app"
     },
     "android": {
+      "package": "com.nezaman.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FBF5F0",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FBF5F0",
+          "imageWidth": 160
+        }
+      ]
+    ]
   }
 }

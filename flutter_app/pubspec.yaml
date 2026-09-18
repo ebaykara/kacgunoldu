@@ -1,0 +1,43 @@
+name: ne_zaman
+description: "En son ne zaman? — bir şeyi en son ne zaman yaptığını takip eden uygulama."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Local-first storage. No backend — the whole app lives on the device.
+  shared_preferences: ^2.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Bundled rather than fetched at runtime: the serif/sans contrast carries the
+  # product's character, so a system-font flash on first paint is not acceptable.
+  fonts:
+    - family: InstrumentSerif
+      fonts:
+        - asset: assets/fonts/InstrumentSerif_400Regular.ttf
+          weight: 400
+    - family: Archivo
+      fonts:
+        - asset: assets/fonts/Archivo_400Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Archivo_500Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Archivo_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Archivo_700Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Archivo_800ExtraBold.ttf
+          weight: 800
