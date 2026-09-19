@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kac_gun_oldu/domain/card.dart';
 import 'package:kac_gun_oldu/domain/date.dart';
 import 'package:kac_gun_oldu/domain/logic.dart';
+import 'package:kac_gun_oldu/widgets/card_tile.dart';
 import 'package:kac_gun_oldu/widgets/draggable_card_grid.dart';
 
 const today = '2026-09-18';
@@ -107,5 +108,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(reorders.single, ['iki', 'üç', 'dört', 'bir']);
+  });
+
+  testWidgets('a lifted card keeps its size in the grid, not its content height', (
+    tester,
+  ) async {
+    // The long name makes the row taller than the short card's own content.
+    await pumpGrid(tester, [
+      deck('kısa', [1]),
+      deck('Çok uzun bir kart adı ki iki üç satıra sarsın diye yazıldı', [2]),
+    ]);
+    final cell = tester.getSize(find.byType(CardTile).first);
+
+    final gesture = await tester.startGesture(tester.getCenter(find.text('kısa')));
+    await tester.pump(const Duration(milliseconds: 400));
+    await gesture.moveBy(const Offset(0, 5));
+    await tester.pump();
+
+    final lifted = find.byWidgetPredicate((w) => w is CardTile && w.isDragging);
+    expect(lifted, findsOneWidget);
+    expect(tester.getSize(lifted), cell);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
   });
 }

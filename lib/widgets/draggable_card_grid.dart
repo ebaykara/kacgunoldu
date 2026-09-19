@@ -137,7 +137,7 @@ class _DraggableCardGridState extends State<DraggableCardGrid> {
   }
 }
 
-class _DraggableCard extends StatelessWidget {
+class _DraggableCard extends StatefulWidget {
   const _DraggableCard({
     required this.card,
     required this.columnWidth,
@@ -163,7 +163,23 @@ class _DraggableCard extends StatelessWidget {
   final bool reduceMotion;
 
   @override
+  State<_DraggableCard> createState() => _DraggableCardState();
+}
+
+class _DraggableCardState extends State<_DraggableCard> {
+  /// The cell as laid out in the grid. A grid cell is stretched to its row's
+  /// height, so the lifted copy takes this size rather than its own content
+  /// height — otherwise a short card visibly shrinks as it is picked up.
+  final _cellKey = GlobalKey();
+
+  @override
   Widget build(BuildContext context) {
+    final card = widget.card;
+    final list = widget.list;
+    final columnWidth = widget.columnWidth;
+    final onTap = widget.onTap;
+    final celebrateNonce = widget.celebrateNonce;
+    final reduceMotion = widget.reduceMotion;
     final tile = list
         ? CardRowTile(
             card: card,
@@ -179,28 +195,33 @@ class _DraggableCard extends StatelessWidget {
             reduceMotion: reduceMotion,
           );
 
-    return DragTarget<String>(
+    final target = DragTarget<String>(
       // Accept nothing on drop — the order is already live from the hover, so
       // the drop only needs to end the gesture.
       onWillAcceptWithDetails: (details) {
-        if (details.data != card.id) onHovered(card.id);
+        if (details.data != card.id) widget.onHovered(card.id);
         return false;
       },
       builder: (context, candidate, rejected) {
         return LongPressDraggable<String>(
           data: card.id,
           delay: const Duration(milliseconds: 350),
-          onDragStarted: onDragStarted,
-          onDragEnd: (_) => onDragEnd(commit: true),
-          onDraggableCanceled: (velocity, offset) => onDragEnd(commit: true),
+          onDragStarted: widget.onDragStarted,
+          onDragEnd: (_) => widget.onDragEnd(commit: true),
+          onDraggableCanceled: (velocity, offset) =>
+              widget.onDragEnd(commit: true),
           // The lifted copy is drawn in the overlay, outside the page's
           // Material — without a plain text style of its own, Flutter paints
           // its debug style there (yellow double underlines).
           feedback: DefaultTextStyle(
             style: const TextStyle(decoration: TextDecoration.none),
-            child: IntrinsicHeight(
-              child: SizedBox(
-                width: columnWidth,
+            // Built when the drag starts, while the cell is still laid out.
+            child: Builder(builder: (_) {
+              final box = _cellKey.currentContext?.findRenderObject();
+              final size = box is RenderBox && box.hasSize ? box.size : null;
+              final lifted = SizedBox(
+                width: size?.width ?? columnWidth,
+                height: size?.height,
                 child: list
                     ? CardRowTile(
                         card: card,
@@ -215,14 +236,16 @@ class _DraggableCard extends StatelessWidget {
                         isDragging: true,
                         reduceMotion: reduceMotion,
                       ),
-              ),
-            ),
+              );
+              return size != null ? lifted : IntrinsicHeight(child: lifted);
+            }),
           ),
           // The gap left behind keeps the grid's shape while the card is up.
           childWhenDragging: Opacity(opacity: 0.25, child: tile),
-          child: isDragging ? Opacity(opacity: 0.25, child: tile) : tile,
+          child: widget.isDragging ? Opacity(opacity: 0.25, child: tile) : tile,
         );
       },
     );
+    return KeyedSubtree(key: _cellKey, child: target);
   }
 }
