@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home screen widgets (kotlin/.../widget). -->
+    <string name="widget_card_label">Kart</string>
+    <string name="widget_card_description">Tek bir kartın kaç gün olduğunu gösterir.</string>
+    <string name="widget_list_label">Kartlar</string>
+    <string name="widget_list_description">Sırası en yakın kartlar bir arada.</string>
+    <string name="widget_title">Kaç gün oldu?</string>
+    <string name="widget_late">%1$d kart gecikti</string>
+    <string name="widget_first_card">İlk kartını oluştur</string>
+    <string name="widget_open_app">Kartlarını görmek için uygulamayı aç</string>
+    <string name="widget_config_title">Hangi kart?</string>
+    <string name="widget_config_hint">Widget bu kartın kaç gün olduğunu gösterecek.</string>
+    <string name="widget_config_auto">En acil kart</string>
+    <string name="widget_config_auto_hint">Her gün sırası en yakın olanı gösterir</string>
+</resources>

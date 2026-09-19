@@ -6,6 +6,8 @@
          (flutter_local_notifications resolves the icon by name);
        - launch_<theme> colours and LaunchTheme.<Theme> styles are gone, and
          the launch screen ignores the colour theme (LaunchScreen.kt,
-         MainActivity.kt use getIdentifier). -->
+         MainActivity.kt use getIdentifier);
+       - wg_<glyph> drawables are gone and every home screen widget shows the
+         fallback glyph (WidgetViews.glyph looks them up by the card's key). -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/ic_notification,@color/launch_*,@style/LaunchTheme*,@drawable/avd_splash_mark,@drawable/ic_splash_mark,@animator/splash_*" />
+    tools:keep="@drawable/ic_notification,@color/launch_*,@style/LaunchTheme*,@drawable/avd_splash_mark,@drawable/ic_splash_mark,@animator/splash_*,@drawable/wg_*" />

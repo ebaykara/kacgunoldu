@@ -37,6 +37,7 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: com.emalabs.kacgunoldu
+        WIDGET_BUNDLE_ID: com.emalabs.kacgunoldu.KacGunOlduWidget
         # Numeric Apple ID of the app in App Store Connect (App Information).
         APP_STORE_APPLE_ID: "6813693710"
     triggering:
@@ -71,6 +72,11 @@ workflows:
           esac
           test -s /tmp/cert_key.pem
           app-store-connect fetch-signing-files "$BUNDLE_ID"             --type IOS_APP_STORE             --certificate-key=@file:/tmp/cert_key.pem             --create
+          # The home screen widget extension has its own App ID and profile.
+          # Both App IDs need the App Groups capability with
+          # group.com.emalabs.kacgunoldu (developer portal, once) - see
+          # store/README.md.
+          app-store-connect fetch-signing-files "$WIDGET_BUNDLE_ID"             --type IOS_APP_STORE             --certificate-key=@file:/tmp/cert_key.pem             --create
           keychain add-certificates
           xcode-project use-profiles
       - name: Install CocoaPods

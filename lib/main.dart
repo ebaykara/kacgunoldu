@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'legal/font_licenses.dart';
 import 'screens/home_screen.dart';
+import 'services/home_widgets.dart';
 import 'services/reminders.dart';
 import 'services/launch_theme.dart';
 import 'state/card_store.dart';
@@ -23,7 +24,7 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // Loads the saved theme too.
-  final store = CardStore(reminders: LocalReminders());
+  final store = CardStore(reminders: LocalReminders(), homeWidgets: PlatformHomeWidgets());
   await store.init();
 
   runApp(KacGunOlduApp(store: store));
@@ -41,6 +42,14 @@ class KacGunOlduApp extends StatelessWidget {
   const KacGunOlduApp({super.key, required this.store});
 
   final CardStore store;
+
+  Route<void> _homeRoute() => MaterialPageRoute(
+    settings: const RouteSettings(name: Navigator.defaultRouteName),
+    builder: (_) => Scaffold(
+      backgroundColor: AppColor.surface,
+      body: HomeScreen(store: store),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -109,10 +118,13 @@ class KacGunOlduApp extends StatelessWidget {
         );
       },
       // The opening animation is a native view on top of this (MainActivity).
-      home: Scaffold(
-        backgroundColor: AppColor.surface,
-        body: HomeScreen(store: store),
-      ),
+      //
+      // Always starts here, whatever the platform's initial route: a home
+      // screen widget opens the app with a link (kacgunoldu://app/card/<id>)
+      // that CardStore turns into "open this card", not a named route.
+      onGenerateInitialRoutes: (_) => [_homeRoute()],
+      onGenerateRoute: (settings) =>
+          settings.name == Navigator.defaultRouteName ? _homeRoute() : null,
     );
   }
 }

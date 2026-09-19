@@ -4,6 +4,8 @@ import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import com.emalabs.kacgunoldu.widget.WidgetSnapshot
+import com.emalabs.kacgunoldu.widget.WidgetViews
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -30,6 +32,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onDestroy() {
         running = false
+        WidgetViews.onPinned = null
         super.onDestroy()
     }
 
@@ -88,6 +91,33 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+        // The home screen widgets (lib/services/home_widgets.dart): their
+        // snapshot, the days marked on them, and placing one from the app.
+        val widgets = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGETS_CHANNEL)
+        WidgetViews.onPinned = { widgets.invokeMethod("pinned", null) }
+        widgets
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "publish" -> {
+                        (call.arguments as? String)?.let { WidgetSnapshot.save(this, it) }
+                        WidgetViews.refreshAll(this)
+                        result.success(null)
+                    }
+                    // Days marked with a widget's "Bugün yaptım", for CardStore.
+                    "takeMarks" -> result.success(WidgetSnapshot.takeMarks(this))
+                    "canPin" -> result.success(WidgetViews.canPin(this))
+                    // "Ana ekrana ekle": the launcher asks the person to confirm.
+                    "pin" -> result.success(
+                        WidgetViews.pin(this, call.argument<String>("cardId"), call.argument<Boolean>("list") == true),
+                    )
+                    // The permission MIUI keeps once its dialog is refused.
+                    "openPinPermission" -> {
+                        WidgetViews.openPinPermission(this)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
     }
 
     companion object {
@@ -96,6 +126,7 @@ class MainActivity : FlutterActivity() {
         var running = false
 
         private const val CHANNEL = "kac_gun_oldu/launch"
+        private const val WIDGETS_CHANNEL = "kac_gun_oldu/widgets"
 
         /** A beat on the finished mark before the app is revealed. */
         private const val HOLD_MS = 500L

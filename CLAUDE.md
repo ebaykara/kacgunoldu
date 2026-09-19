@@ -21,7 +21,7 @@ flutter analyze   # 0 uyarı olmalı
 ```
 
 ```bash
-flutter test      # 147 test, hepsi geçmeli
+flutter test      # 158 test, hepsi geçmeli
 ```
 
 ```bash
@@ -53,6 +53,8 @@ lib/
   domain/reminders.dart     planReminders: hangi bildirim ne zaman (saf)
   domain/reminder_copy.dart bildirim metinleri: konu KART ADINDAN (simgeden değil), konu başına şablonlar
   services/reminders.dart   Reminders arayüzü · LocalReminders (OS) · NoopReminders
+  services/home_widgets.dart  ana ekran widget'ları: widgetSnapshot · HomeWidgets
+                            (Platform/Noop) · cardIdFromLink (bkz. tuzak 18)
   storage/seed.dart         örnek kartlar — YALNIZCA Ayarlar → "Örnek kartları ekle"
                             (ilk açılış boş başlar; mağaza sürümü uydurma veri açmaz)
   storage/repository.dart   CardRepository + Profile — shared_preferences
@@ -79,6 +81,14 @@ lib/
 test/  domain · storage · state · theme · widgets · screens
 store/  mağaza metinleri, gizlilik politikası, Play form cevapları, görseller (README)
 tool/create_upload_key.ps1   yükleme anahtarı + android/key.properties (git dışı)
+tool/gen_widget_glyphs.py    kart simgelerinin widget kopyaları (Android wg_* + iOS glyph_*)
+tool/widget_previews_test.dart  Android widget menüsü önizlemeleri (drawable-nodpi/widget_preview_*):
+                            `flutter test tool/widget_previews_test.dart`; widget görünümü değişince
+lib/widgets/home_widget_help.dart  "Ana ekrana widget ekle" adımları (iOS; sabitleyemeyen Android)
+android/.../kacgunoldu/widget/  CardWidget (Kart, 2×2, seçilebilir) · CardListWidget (Kartlar)
+                            · WidgetSnapshot (mantık) · WidgetViews · CardWidgetConfigActivity
+ios/KacGunOlduWidget/        WidgetKit uzantısı (iOS 17+): Kart (küçük + kilit ekranı,
+                            AppIntent ile kart seçimi) · Kartlar (orta, büyük)
       fake_reminders.dart: bildirim servisinin kayıt tutan sahtesi
 ```
 
@@ -242,6 +252,29 @@ Türkçe ve kesin. Değiştirmen istenmediyse aynen kalsın:
 17. **Sürüm (R8) derlemesi adla aranan kaynakları siler.** `ic_notification` silinince
     bildirimler sürümde SESSİZCE hiç görünmüyordu (debug'da her şey çalışır). Adla aranan her
     kaynak `res/raw/keep.xml`'de olmalı. Kontrol: `aapt2 dump resources app-release.apk`.
+
+18. **Ana ekran widget'ları günü kendileri sayar.** Dart (`widgetSnapshot`) yalnızca kartın
+    son kaydını ve aralığını (`every` ya da öğrenilmiş medyan — bugüne bağlı değil) + tema
+    renklerini yazar; gün/kademe/durum satırı Kotlin (`widget/WidgetSnapshot.kt`) ve Swift
+    (`KacGunOlduWidget/WidgetSnapshot.swift`) içinde `statsFor`/`CardStatus`'un kopyasıyla
+    hesaplanır. **`logic.dart`'taki kuralları değiştirirsen ikisini de değiştir.** Yayın her
+    `_commit`, açılış ve tema değişiminde (`CardStore._syncWidgets`). Android: kanal →
+    `SharedPreferences` → `refreshAll`; gece yarısı uyandırmayan alarm. iOS: kanal → App Group
+    `group.com.emalabs.kacgunoldu` → `reloadAllTimelines`; zaman çizelgesi her gece yarısına giriş
+    koyar. Dokunuş `kacgunoldu://app/card/<id>` açar; Flutter'ın derin bağlantısı
+    `CardStore.didPushRouteInformation`'a (sıcak) ya da `defaultRouteName`'e (soğuk) getirir,
+    kart detayı `openCardRequest` ile açılır. Bu yüzden `MaterialApp` `home` yerine
+    `onGenerateInitialRoutes` kullanır — bağlantı rota sanılmasın. Simgeler adla aranır:
+    `wg_*` `keep.xml`'de (tuzak 17); katalog değişince `python tool/gen_widget_glyphs.py`
+    (`home_widgets_test.dart` eksik kopyayı yakalar). iOS imzası App Group ister
+    (`store/README.md`).
+    **"Bugün yaptım" widget'ta kayıt yazmaz, işaret bırakır:** widget anlık görüntüdeki
+    `last`'ı bugüne çeker (hemen yeniden çizilir) ve `marks` listesine ekler; uygulama
+    açılışta (ilk yayından ÖNCE) ve öne gelişte `takeMarks` ile alıp gerçek kayda çevirir
+    (`CardStore._takeWidgetMarks`; aynı gün/silinmiş kart atlanır). Düğme Ayarlar'dan
+    kapatılabilir (`nezaman.widgetdone.v1`, anlık görüntüde `doneButton`). Android'de
+    "Ana ekrana ekle" `requestPinAppWidget` ile; seçilen kart geri çağrıda (`ACTION_PINNED`)
+    widget'a yazılır. Kart widget'ı eklenirken kart seçme ekranı her sürümde açılır.
 
 ## Yayın
 

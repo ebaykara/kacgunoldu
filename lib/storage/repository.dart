@@ -10,6 +10,7 @@ const _profileKey = 'nezaman.profile.v1';
 const _themeKey = 'nezaman.theme.v1';
 const _reminderTimeKey = 'nezaman.remindertime.v1';
 const _layoutKey = 'nezaman.layout.v1';
+const _widgetDoneKey = 'nezaman.widgetdone.v1';
 
 /// The person behind the cards. Local only — there are no accounts.
 class Profile {
@@ -189,6 +190,26 @@ class CardRepository {
     try {
       final prefs = await _prefs;
       await prefs.setString(_layoutKey, layout.name);
+    } catch (_) {
+      // Best-effort, same as saveCards.
+    }
+  }
+
+  /// Whether home screen widgets show the "Bugün yaptım" button; on until
+  /// someone turns it off.
+  Future<bool> loadWidgetDoneButton() async {
+    try {
+      final prefs = await _prefs;
+      return prefs.getBool(_widgetDoneKey) ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<void> saveWidgetDoneButton(bool on) async {
+    try {
+      final prefs = await _prefs;
+      await prefs.setBool(_widgetDoneKey, on);
     } catch (_) {
       // Best-effort, same as saveCards.
     }

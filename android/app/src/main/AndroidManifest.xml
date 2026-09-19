@@ -42,6 +42,48 @@
               android:resource="@style/NormalTheme"
               />
         </activity>
+        <!-- Home screen widgets (kotlin/.../widget). They draw from a snapshot the
+             app writes (MainActivity, "kac_gun_oldu/widgets") and open a card
+             through SplashActivity with kacgunoldu://app/card/<id>, which
+             Flutter's deep linking hands to CardStore. -->
+        <receiver
+            android:name=".widget.CardWidget"
+            android:exported="false"
+            android:label="@string/widget_card_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <!-- Day counts move when the clock or the time zone does. -->
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_card_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.CardListWidget"
+            android:exported="false"
+            android:label="@string/widget_list_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_list_info" />
+        </receiver>
+        <!-- Picks the card a "Kart" widget shows. Its own empty task affinity
+             (only here - see MainActivity's note) so that finishing it returns
+             to the home screen, not into the app if it was open behind. -->
+        <activity
+            android:name=".widget.CardWidgetConfigActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />

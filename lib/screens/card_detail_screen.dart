@@ -14,6 +14,7 @@ import '../widgets/card_glyph.dart';
 import '../widgets/confirm_destructive.dart';
 import '../widgets/day_count.dart';
 import '../widgets/halo.dart';
+import '../widgets/home_widget_help.dart';
 import '../widgets/record_sheet.dart';
 import '../widgets/rhythm_ring.dart';
 import '../widgets/store_snack.dart';
@@ -123,6 +124,19 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
             onTap: () {
               Navigator.of(sheetContext).pop();
               _pickDay();
+            },
+          ),
+          ActionRow(
+            icon: Icons.widgets_outlined,
+            label: 'Ana ekrana ekle',
+            detail: 'Bu kartı widget olarak göster',
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              if (_store.canPinWidget) {
+                pinHomeWidget(context, _store, card: card);
+              } else {
+                showHomeWidgetHelp(context, card: card);
+              }
             },
           ),
           ActionRow(

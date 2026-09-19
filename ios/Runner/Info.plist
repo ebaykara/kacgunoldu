@@ -24,6 +24,19 @@
 		<string>????</string>
 		<key>CFBundleVersion</key>
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
+		<!-- Home screen widgets open a card with kacgunoldu://app/card/<id>;
+		     Flutter's deep linking hands it to CardStore. -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>com.emalabs.kacgunoldu</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>kacgunoldu</string>
+				</array>
+			</dict>
+		</array>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>UIApplicationSceneManifest</key>

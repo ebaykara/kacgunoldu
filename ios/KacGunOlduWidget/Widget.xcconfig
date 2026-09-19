@@ -1,0 +1,4 @@
+// The widget extension's version must match the app's: both come from
+// pubspec.yaml through Flutter's generated settings (FLUTTER_BUILD_NAME /
+// FLUTTER_BUILD_NUMBER, used in Info.plist).
+#include "../Flutter/Generated.xcconfig"

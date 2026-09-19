@@ -16,6 +16,13 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		A1D0E329D47660FADF4D8887 /* KacGunOlduWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D005014DF3C64F1D3C996E /* KacGunOlduWidget.swift */; };
+		A1D098D88640A2479BD1E430 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D01E03256DD8ABE0361616 /* WidgetSnapshot.swift */; };
+		A1D0999DCBC7B5E516AF8465 /* WidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D075D7C1077F4C3C202383 /* WidgetViews.swift */; };
+		A1D010F4B0A8EEA412AB358A /* CardIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D008D4497BF613F0131DA1 /* CardIntent.swift */; };
+		A1D070C918BA97D1617D2CF4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1D004B09AF9A08788FD3F43 /* Assets.xcassets */; };
+		A1D0430857AE63F517DA242F /* InstrumentSerif_400Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1D058D22C97748EF063B2BB /* InstrumentSerif_400Regular.ttf */; };
+		A1D07DF623CAB8EDE0F004C4 /* KacGunOlduWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1D06BB36B3516FB26062671 /* KacGunOlduWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,6 +32,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
+		};
+		A1D00EC8AB8E050B454A66B1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1D063717BED0DCCC447EFDC;
+			remoteInfo = KacGunOlduWidgetExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -37,6 +51,17 @@
 			files = (
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1D044ABA5D20B9823517644 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A1D07DF623CAB8EDE0F004C4 /* KacGunOlduWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -59,6 +84,17 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1D005014DF3C64F1D3C996E /* KacGunOlduWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KacGunOlduWidget.swift; sourceTree = "<group>"; };
+		A1D01E03256DD8ABE0361616 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		A1D075D7C1077F4C3C202383 /* WidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetViews.swift; sourceTree = "<group>"; };
+		A1D008D4497BF613F0131DA1 /* CardIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardIntent.swift; sourceTree = "<group>"; };
+		A1D004B09AF9A08788FD3F43 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1D058D22C97748EF063B2BB /* InstrumentSerif_400Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = InstrumentSerif_400Regular.ttf; path = ../../assets/fonts/InstrumentSerif_400Regular.ttf; sourceTree = "<group>"; };
+		A1D02EA6740D29A7889D68D5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1D070EFBFAB1D3C544EDD7F /* KacGunOlduWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KacGunOlduWidget.entitlements; sourceTree = "<group>"; };
+		A1D0BEF15C918D66627706AD /* Widget.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Widget.xcconfig; sourceTree = "<group>"; };
+		A1D06BB36B3516FB26062671 /* KacGunOlduWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KacGunOlduWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1D0CF342FB8492B5C3A136C /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +103,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1D0B66AB5880D0ADD80C0FF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -100,6 +143,7 @@
 				97C146F01CF9000F007C117D /* Runner */,
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
+				A1D0C8A032D86868465DFD7D /* KacGunOlduWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -108,6 +152,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
+				A1D06BB36B3516FB26062671 /* KacGunOlduWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -124,8 +169,25 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+				A1D0CF342FB8492B5C3A136C /* Runner.entitlements */,
 			);
 			path = Runner;
+			sourceTree = "<group>";
+		};
+		A1D0C8A032D86868465DFD7D /* KacGunOlduWidget */ = {
+			isa = PBXGroup;
+			children = (
+				A1D005014DF3C64F1D3C996E /* KacGunOlduWidget.swift */,
+				A1D01E03256DD8ABE0361616 /* WidgetSnapshot.swift */,
+				A1D075D7C1077F4C3C202383 /* WidgetViews.swift */,
+				A1D008D4497BF613F0131DA1 /* CardIntent.swift */,
+				A1D004B09AF9A08788FD3F43 /* Assets.xcassets */,
+				A1D058D22C97748EF063B2BB /* InstrumentSerif_400Regular.ttf */,
+				A1D02EA6740D29A7889D68D5 /* Info.plist */,
+				A1D070EFBFAB1D3C544EDD7F /* KacGunOlduWidget.entitlements */,
+				A1D0BEF15C918D66627706AD /* Widget.xcconfig */,
+			);
+			path = KacGunOlduWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -157,11 +219,13 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
+				A1D044ABA5D20B9823517644 /* Embed Foundation Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A1D069023C044F7BC4EBCB46 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			packageProductDependencies = (
@@ -170,6 +234,23 @@
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A1D063717BED0DCCC447EFDC /* KacGunOlduWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1D09B33BB84B628107E1EF8 /* Build configuration list for PBXNativeTarget "KacGunOlduWidgetExtension" */;
+			buildPhases = (
+				A1D0EDB54BFD00D28472978F /* Sources */,
+				A1D0B66AB5880D0ADD80C0FF /* Frameworks */,
+				A1D050D4085C3C909570E679 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KacGunOlduWidgetExtension;
+			productName = KacGunOlduWidgetExtension;
+			productReference = A1D06BB36B3516FB26062671 /* KacGunOlduWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -188,6 +269,9 @@
 					97C146ED1CF9000F007C117D = {
 						CreatedOnToolsVersion = 7.3.1;
 						LastSwiftMigration = 1100;
+					};
+					A1D063717BED0DCCC447EFDC = {
+						CreatedOnToolsVersion = 15.0;
 					};
 				};
 			};
@@ -209,6 +293,7 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
+				A1D063717BED0DCCC447EFDC /* KacGunOlduWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -229,6 +314,15 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1D050D4085C3C909570E679 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1D070C918BA97D1617D2CF4 /* Assets.xcassets in Resources */,
+				A1D0430857AE63F517DA242F /* InstrumentSerif_400Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -287,6 +381,17 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1D0EDB54BFD00D28472978F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1D0E329D47660FADF4D8887 /* KacGunOlduWidget.swift in Sources */,
+				A1D098D88640A2479BD1E430 /* WidgetSnapshot.swift in Sources */,
+				A1D0999DCBC7B5E516AF8465 /* WidgetViews.swift in Sources */,
+				A1D010F4B0A8EEA412AB358A /* CardIntent.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -294,6 +399,11 @@
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
+		};
+		A1D069023C044F7BC4EBCB46 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1D063717BED0DCCC447EFDC /* KacGunOlduWidgetExtension */;
+			targetProxy = A1D00EC8AB8E050B454A66B1 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -375,6 +485,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -554,6 +665,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -576,6 +688,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
@@ -590,6 +703,87 @@
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
+		};
+		A1D07DA0A9B4D799E6338760 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A1D0BEF15C918D66627706AD /* Widget.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = KacGunOlduWidget/KacGunOlduWidget.entitlements;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KacGunOlduWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.emalabs.kacgunoldu.KacGunOlduWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A1D0D3FCE4DDA6E2A63A8698 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A1D0BEF15C918D66627706AD /* Widget.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = KacGunOlduWidget/KacGunOlduWidget.entitlements;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KacGunOlduWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.emalabs.kacgunoldu.KacGunOlduWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		A1D0A584E8276DCCF3412F03 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A1D0BEF15C918D66627706AD /* Widget.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = KacGunOlduWidget/KacGunOlduWidget.entitlements;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KacGunOlduWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.emalabs.kacgunoldu.KacGunOlduWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Profile;
 		};
 /* End XCBuildConfiguration section */
 
@@ -620,6 +814,16 @@
 				97C147061CF9000F007C117D /* Debug */,
 				97C147071CF9000F007C117D /* Release */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1D09B33BB84B628107E1EF8 /* Build configuration list for PBXNativeTarget "KacGunOlduWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1D07DA0A9B4D799E6338760 /* Debug */,
+				A1D0D3FCE4DDA6E2A63A8698 /* Release */,
+				A1D0A584E8276DCCF3412F03 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

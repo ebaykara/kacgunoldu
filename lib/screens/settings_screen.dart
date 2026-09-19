@@ -7,6 +7,7 @@ import '../state/card_store.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import '../widgets/confirm_destructive.dart';
+import '../widgets/home_widget_help.dart';
 import '../widgets/store_snack.dart';
 import '../widgets/ui.dart';
 import 'legal_screen.dart';
@@ -202,6 +203,48 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                     _Group(
+                      title: "Ana ekran widget'ı",
+                      children: [
+                        if (store.canPinWidget) ...[
+                          ActionRow(
+                            icon: Icons.widgets_outlined,
+                            label: "Kart widget'ı ekle",
+                            detail: 'Tek bir kartın kaç gün olduğu',
+                            onTap: () => pinHomeWidget(context, store),
+                          ),
+                          ActionRow(
+                            icon: Icons.view_agenda_outlined,
+                            label: "Kartlar widget'ı ekle",
+                            detail: 'Sırası en yakın kartlar bir arada',
+                            onTap: () => pinHomeWidget(context, store, list: true),
+                          ),
+                        ] else
+                          ActionRow(
+                            icon: Icons.widgets_outlined,
+                            label: 'Ana ekrana widget ekle',
+                            detail: 'Kartların uygulamayı açmadan görünsün',
+                            onTap: () => showHomeWidgetHelp(context),
+                          ),
+                        ActionRow(
+                          icon: Icons.check_circle_outline_rounded,
+                          label: '“Bugün yaptım” düğmesi',
+                          detail: "Widget'tan tek dokunuşla işaretle",
+                          onTap: () => store.setWidgetDoneButton(!store.widgetDoneButton),
+                          trailing: Switch(
+                            value: store.widgetDoneButton,
+                            onChanged: store.setWidgetDoneButton,
+                            activeTrackColor: AppColor.primary,
+                            activeThumbColor: AppColor.onPrimary,
+                            inactiveTrackColor: AppColor.surfaceContainerHover,
+                            inactiveThumbColor: AppColor.surfaceBright,
+                            trackOutlineColor: WidgetStateProperty.all(
+                              Colors.transparent,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    _Group(
                       title: 'Yedekleme',
                       children: [
                         ActionRow(
@@ -246,26 +289,33 @@ class SettingsScreen extends StatelessWidget {
                           label: 'Kullanım koşulları',
                           onTap: () => openTerms(context),
                         ),
-                        ActionRow(
-                          icon: Icons.article_outlined,
-                          label: 'Açık kaynak lisansları',
-                          onTap: () => showLicensePage(
-                            context: context,
-                            applicationName: 'Kaç Gün Oldu?',
-                            applicationVersion: appVersion,
-                            applicationLegalese: '© 2026 EMA Labs',
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: Space.s12),
-                    Text(
-                      'Kaç gün oldu? · $appVersion',
-                      textAlign: TextAlign.center,
-                      style: ui(
-                        12,
-                        weight: FontWeight.w600,
-                        color: AppColor.outline,
+                    // The open source licenses (packages, and the bundled
+                    // fonts' OFL) sit behind the version line, the way most
+                    // apps tuck them away: required to be there, not needed
+                    // in the list above.
+                    Semantics(
+                      button: true,
+                      label: 'Açık kaynak lisansları',
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => showLicensePage(
+                          context: context,
+                          applicationName: 'Kaç Gün Oldu?',
+                          applicationVersion: appVersion,
+                          applicationLegalese: '© 2026 EMA Labs',
+                        ),
+                        child: Text(
+                          'Kaç gün oldu? · $appVersion',
+                          textAlign: TextAlign.center,
+                          style: ui(
+                            12,
+                            weight: FontWeight.w600,
+                            color: AppColor.outline,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 3),

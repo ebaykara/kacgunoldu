@@ -101,5 +101,20 @@ derleyip TestFlight'a gönderir; Mac gerekmez. Apple Developer üyeliği (yıll�
    EULA'sı (uygulama içi koşullar buna ek).
 6. Şifreleme sorusu çıkmaz (`ITSAppUsesNonExemptEncryption=false`).
 
+### Widget'lar için bir kez (App Group)
+
+Ana ekran widget'ları (`ios/KacGunOlduWidget`, iOS 17+) ayrı bir uzantıdır ve kart verisini
+uygulamayla bir **App Group** üzerinden paylaşır. Bu yapılmadan iOS derlemesi imzalamada düşer.
+[developer.apple.com](https://developer.apple.com/account/resources) → Certificates, IDs & Profiles:
+
+1. Identifiers → **+** → App Groups → `group.com.emalabs.kacgunoldu`.
+2. Identifiers → `com.emalabs.kacgunoldu` → **App Groups** kutusunu işaretle → Configure → bu
+   grubu seç → Save.
+3. Identifiers → **+** → App IDs → App → paket kimliği `com.emalabs.kacgunoldu.KacGunOlduWidget`,
+   açıklama `Kac Gun Oldu Widget` → **App Groups** işaretle, aynı grubu seç → Register.
+4. Profiles: `com.emalabs.kacgunoldu` için daha önce oluşmuş App Store profili yetenek değişince
+   "Invalid" olur; sil. Codemagic sonraki derlemede ikisini de (uygulama + widget) yeniden
+   üretir (`codemagic.yaml` → "Set up code signing").
+
 Android'i sonra yayımlarsan `android-play` iş akışı hazır: yükleme anahtarını Codemagic'e
 "Android keystore" olarak `kacgunoldu_upload` adıyla yükle.

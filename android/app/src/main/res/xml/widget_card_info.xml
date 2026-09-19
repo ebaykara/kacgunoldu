@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Kart": 2x2 by default. Placing it opens the card picker
+     (CardWidgetConfigActivity) on every Android version; long-press →
+     reconfigure changes the card later. The picker preview is a picture of
+     the real thing, rendered by tool/widget_previews_test.dart. Day counts
+     move at midnight through an alarm (WidgetViews.scheduleMidnight); the
+     6-hour update is only a safety net for after a reboot, which clears
+     alarms. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.emalabs.kacgunoldu.widget.CardWidgetConfigActivity"
+    android:description="@string/widget_card_description"
+    android:initialLayout="@layout/widget_card"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="100dp"
+    android:minResizeHeight="100dp"
+    android:previewImage="@drawable/widget_preview_card"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="21600000"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />

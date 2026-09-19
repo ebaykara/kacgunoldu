@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Home screen widgets. Android 12+ uses the launcher's own corner radii
+         (values-v31), so a widget sits flush with its neighbours. -->
+    <dimen name="widget_radius">24dp</dimen>
+    <dimen name="widget_row_radius">16dp</dimen>
+    <dimen name="widget_padding">16dp</dimen>
+</resources>

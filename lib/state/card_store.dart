@@ -9,6 +9,7 @@ import '../domain/order.dart';
 import '../domain/reminder_copy.dart';
 import '../domain/reminders.dart';
 import '../domain/text.dart';
+import '../services/home_widgets.dart';
 import '../services/launch_theme.dart';
 import '../services/reminders.dart';
 import '../storage/repository.dart';
@@ -50,22 +51,28 @@ List<DateKey> _insertRecord(List<DateKey> recs, DateKey key) {
 /// A [ChangeNotifier] rather than a heavier state package: the whole app is one
 /// screen over one list, and this keeps the data flow readable end to end.
 class CardStore extends ChangeNotifier with WidgetsBindingObserver {
-  CardStore({CardRepository? repository, Reminders? reminders})
+  CardStore({CardRepository? repository, Reminders? reminders, HomeWidgets? homeWidgets})
       : _repository = repository ?? CardRepository(),
-        _reminders = reminders ?? NoopReminders();
+        _reminders = reminders ?? NoopReminders(),
+        _homeWidgets = homeWidgets ?? NoopHomeWidgets();
 
   final CardRepository _repository;
   final Reminders _reminders;
+  final HomeWidgets _homeWidgets;
+  String? _publishedSnapshot;
+  bool _widgetDoneButton = true;
+  bool _canPinWidget = false;
 
   CardLayout _layout = CardLayout.grid;
   int _reminderHour = defaultReminderHour;
   int _reminderMinute = defaultReminderMinute;
   Future<void> _syncChain = Future.value();
   StreamSubscription<String>? _tapSub;
+  StreamSubscription<void>? _pinnedSub;
   bool _disposed = false;
 
-  /// A card the person asked to open from a notification. The home screen
-  /// consumes it (opens the card, then clears it).
+  /// A card the person asked to open from a notification or a home screen
+  /// widget. The home screen consumes it (opens the card, then clears it).
   final openCardRequest = ValueNotifier<String?>(null);
 
   /// Grid or list on the Kartlar tab.
@@ -120,6 +127,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
       _repository.loadThemeId(),
       _repository.loadReminderTime(),
       _repository.loadLayout(),
+      _repository.loadWidgetDoneButton(),
     ]);
     _cards = results[0] as List<Card>;
     _manualOrder = results[1] as List<String>?;
@@ -127,6 +135,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     AppColor.current = paletteById(results[3] as String?);
     unawaited(applyLaunchTheme(AppColor.current.id));
     _layout = results[5] as CardLayout;
+    _widgetDoneButton = results[6] as bool;
     final time = results[4] as (int, int)?;
     if (time != null) {
       _reminderHour = time.$1;
@@ -135,6 +144,20 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
 
     _ready = true;
     _scheduleMidnight();
+    // Days marked on a widget while the app was closed, before the widgets
+    // are handed a snapshot that doesn't have them yet.
+    await _takeWidgetMarks();
+    _syncWidgets();
+    _pinnedSub = _homeWidgets.pinned.listen((_) => toast('Widget ana ekrana eklendi'));
+    unawaited(_homeWidgets.canPin().then((can) {
+      if (_disposed || can == _canPinWidget) return;
+      _canPinWidget = can;
+      notifyListeners();
+    }));
+    // Opened by tapping a card on a home screen widget, from a closed state.
+    final launchLink = Uri.tryParse(WidgetsBinding.instance.platformDispatcher.defaultRouteName);
+    final launchCard = launchLink == null ? null : cardIdFromLink(launchLink);
+    if (launchCard != null) openCardRequest.value = launchCard;
     notifyListeners();
     // Not awaited: the notification plugin and the timezone database are
     // slow to start, and nothing on screen needs them — the app should draw
@@ -159,6 +182,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     _midnightTimer?.cancel();
     _disposed = true;
     _tapSub?.cancel();
+    _pinnedSub?.cancel();
     openCardRequest.dispose();
     super.dispose();
   }
@@ -170,7 +194,21 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       _refreshToday();
       _scheduleMidnight();
+      unawaited(_takeWidgetMarks());
     }
+  }
+
+  /// A home screen widget tapped while the app is running (the widgets link
+  /// to `kacgunoldu://app/card/<id>`). Claimed here so the navigator never
+  /// tries it as a route.
+  @override
+  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
+    final uri = routeInformation.uri;
+    final id = cardIdFromLink(uri);
+    if (id != null) openCardRequest.value = id;
+    // Any link of ours is claimed, even one naming no card: as a route it
+    // would have nowhere to go.
+    return id != null || uri.scheme == appLinkScheme;
   }
 
   void _refreshToday() {
@@ -194,6 +232,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     _cards = next;
     unawaited(_repository.saveCards(next));
     _syncReminders();
+    _syncWidgets();
     notifyListeners();
   }
 
@@ -380,6 +419,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     unawaited(_repository.saveThemeId(next.id));
     unawaited(applyLaunchTheme(next.id));
     applySystemBars();
+    _syncWidgets();
     notifyListeners();
     // Colours are read straight from [AppColor], not inherited, so nothing
     // rebuilds by itself — including pages further down the navigator stack.
@@ -481,6 +521,68 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
       minute: _reminderMinute,
     );
     _syncChain = _syncChain.then((_) => _reminders.sync(plan));
+  }
+
+  /// Hands the home screen widgets what they draw. Skipped when nothing they
+  /// show has changed (a record on an already-recorded day, say).
+  void _syncWidgets() {
+    final snapshot = widgetSnapshot(_cards, _today, doneButton: _widgetDoneButton);
+    if (snapshot == _publishedSnapshot) return;
+    _publishedSnapshot = snapshot;
+    unawaited(_homeWidgets.publish(snapshot));
+  }
+
+  // ---- home screen widgets -------------------------------------------------
+
+  /// Whether the widgets show the "Bugün yaptım" button.
+  bool get widgetDoneButton => _widgetDoneButton;
+
+  void setWidgetDoneButton(bool on) {
+    if (on == _widgetDoneButton) return;
+    _widgetDoneButton = on;
+    unawaited(_repository.saveWidgetDoneButton(on));
+    _syncWidgets();
+    notifyListeners();
+  }
+
+  /// The app can place a widget itself (Android); elsewhere it explains how.
+  bool get canPinWidget => _canPinWidget;
+
+  /// Asks the launcher to place the single-card widget on [cardId], or the
+  /// list widget.
+  Future<PinResult> pinWidget({String? cardId, bool list = false}) =>
+      _homeWidgets.pin(cardId: cardId, list: list);
+
+  /// The system page for a refused "add to home screen" permission.
+  Future<void> openPinPermission() => _homeWidgets.openPinPermission();
+
+  /// Records the days marked with a widget's "Bugün yaptım" button. The
+  /// widget has already redrawn itself; this makes them real records. A day
+  /// already recorded, or a card deleted since, is skipped.
+  Future<void> _takeWidgetMarks() async {
+    final marks = await _homeWidgets.takeMarks();
+    if (_disposed || marks.isEmpty) return;
+    var next = _cards;
+    final names = <String>[];
+    for (final m in marks) {
+      if (daysSince(m.day, _today) < 0) continue;
+      final card = next.where((c) => c.id == m.id).firstOrNull;
+      if (card == null || card.recs.contains(m.day)) continue;
+      names.add(card.name);
+      next = [
+        for (final c in next)
+          if (c.id == m.id) c.copyWith(recs: _insertRecord(c.recs, m.day)) else c,
+      ];
+    }
+    if (names.isEmpty) return;
+    _undoData = null;
+    _showSnack(Snack(
+      message: names.length == 1
+          ? "${names.single} · widget'tan kaydedildi"
+          : "${names.length} kayıt widget'tan eklendi",
+      undoable: false,
+    ));
+    _commit(next);
   }
 
   /// Asks the system for notification permission (first use only prompts).
