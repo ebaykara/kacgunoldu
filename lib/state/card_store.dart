@@ -8,6 +8,7 @@ import '../domain/date.dart';
 import '../domain/order.dart';
 import '../domain/reminder_copy.dart';
 import '../domain/reminders.dart';
+import '../domain/share.dart';
 import '../domain/text.dart';
 import '../services/home_widgets.dart';
 import '../services/launch_theme.dart';
@@ -89,7 +90,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   int get reminderMinute => _reminderMinute;
 
   /// How many cards are marked for reminders.
-  int get reminderCount => _cards.where((c) => c.notify).length;
+  int get reminderCount => _cards.where((c) => c.notify && !c.archived).length;
 
   List<Card> _cards = const [];
   List<String>? _manualOrder;
@@ -99,7 +100,9 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   Snack? _snack;
   RecordPulse? _recordPulse;
 
-  ({String id, List<DateKey> recs})? _undoData;
+  /// The card as it was before the last undoable change (records and their
+  /// notes).
+  Card? _undoData;
   Timer? _snackTimer;
   Timer? _midnightTimer;
 
@@ -115,8 +118,17 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   Card? byId(String id) => _cards.where((c) => c.id == id).firstOrNull;
 
   /// The grid's display order: the saved drag arrangement if there is one,
-  /// otherwise urgency (overdue first, then soonest-due).
-  List<Card> get cards => applyOrder(_cards, _manualOrder, _today);
+  /// otherwise urgency (overdue first, then soonest-due). Archived cards are
+  /// left out here — and so everywhere that reads this list.
+  List<Card> get cards =>
+      applyOrder(_cards.where((c) => !c.archived).toList(), _manualOrder, _today);
+
+  /// Put-away cards, most recently done first.
+  List<Card> get archivedCards => _cards.where((c) => c.archived).toList()
+    ..sort((a, b) => (b.recs.firstOrNull ?? '').compareTo(a.recs.firstOrNull ?? ''));
+
+  /// Any card at all, archived or not.
+  bool get hasAnyCards => _cards.isNotEmpty;
 
   Future<void> init() async {
     WidgetsBinding.instance.addObserver(this);
@@ -158,6 +170,8 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     final launchLink = Uri.tryParse(WidgetsBinding.instance.platformDispatcher.defaultRouteName);
     final launchCard = launchLink == null ? null : cardIdFromLink(launchLink);
     if (launchCard != null) openCardRequest.value = launchCard;
+    final launchShared = parseSharedCard(WidgetsBinding.instance.platformDispatcher.defaultRouteName);
+    if (launchShared != null) _importFromLink(launchShared);
     notifyListeners();
     // Not awaited: the notification plugin and the timezone database are
     // slow to start, and nothing on screen needs them — the app should draw
@@ -204,6 +218,11 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   @override
   Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
     final uri = routeInformation.uri;
+    final shared = parseSharedCard(uri.toString());
+    if (shared != null) {
+      _importFromLink(shared);
+      return true;
+    }
     final id = cardIdFromLink(uri);
     if (id != null) openCardRequest.value = id;
     // Any link of ours is claimed, even one naming no card: as a route it
@@ -268,7 +287,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     final card = _cards.where((c) => c.id == cardId).firstOrNull;
     if (card == null) return;
     final key = shiftDays(_today, -offset);
-    _undoData = (id: card.id, recs: card.recs);
+    _undoData = card;
     _recordPulse = RecordPulse(card.id, DateTime.now().microsecondsSinceEpoch);
     _showSnack(Snack(message: '${card.name} · ${relativeLabel(offset)}', undoable: true));
     _commit([
@@ -287,7 +306,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     _snack = null;
     _commit([
       for (final c in _cards)
-        if (c.id == u.id) c.copyWith(recs: u.recs) else c,
+        if (c.id == u.id) c.copyWith(recs: u.recs, notes: u.notes) else c,
     ]);
   }
 
@@ -295,7 +314,14 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   ///
   /// [offset] of `null` leaves the card without a first record ("Henüz
   /// yapmadım" in the card form).
-  String? addCard(String rawName, int? offset, {String? icon, int? every, bool notify = false}) {
+  String? addCard(
+    String rawName,
+    int? offset, {
+    String? icon,
+    int? every,
+    bool notify = false,
+    int? remindAt,
+  }) {
     final trimmed = rawName.trim();
     if (trimmed.isEmpty) return null;
     // The field invites a lowercase, first-person sentence ("çamaşır
@@ -310,6 +336,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
       every: every,
       created: _today,
       notify: notify,
+      remindAt: remindAt,
     );
     _undoData = null;
     _showSnack(Snack(message: '“$name” eklendi', undoable: false));
@@ -351,12 +378,18 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   void removeRecord(String cardId, DateKey key) {
     final card = byId(cardId);
     if (card == null || !card.recs.contains(key)) return;
-    _undoData = (id: card.id, recs: card.recs);
+    _undoData = card;
     _recordPulse = null;
     _showSnack(Snack(message: '${formatDayMonth(key, _today)} kaydı silindi', undoable: true));
     _commit([
       for (final c in _cards)
-        if (c.id == card.id) c.copyWith(recs: c.recs.where((r) => r != key).toList()) else c,
+        if (c.id == card.id)
+          c.copyWith(
+            recs: c.recs.where((r) => r != key).toList(),
+            notes: {...c.notes}..remove(key),
+          )
+        else
+          c,
     ]);
   }
 
@@ -364,21 +397,110 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   void moveRecord(String cardId, DateKey from, DateKey to) {
     final card = byId(cardId);
     if (card == null || from == to || !card.recs.contains(from)) return;
-    _undoData = (id: card.id, recs: card.recs);
+    _undoData = card;
     _recordPulse = null;
     _showSnack(Snack(message: 'Kayıt ${formatDayMonth(to, _today)} olarak güncellendi', undoable: true));
+    // The note travels with its record; a day that already had its own note
+    // keeps that one.
+    final notes = {...card.notes}..remove(from);
+    final moved = card.notes[from];
+    if (moved != null) notes.putIfAbsent(to, () => moved);
     _commit([
       for (final c in _cards)
         if (c.id == card.id)
-          c.copyWith(recs: _insertRecord(c.recs.where((r) => r != from).toList(), to))
+          c.copyWith(
+            recs: _insertRecord(c.recs.where((r) => r != from).toList(), to),
+            notes: notes,
+          )
         else
           c,
     ]);
   }
 
+  /// Write, change or (with an empty [text]) remove the note on one record.
+  void setNote(String cardId, DateKey key, String text) {
+    final card = byId(cardId);
+    if (card == null || !card.recs.contains(key)) return;
+    final trimmed = text.trim();
+    if ((card.notes[key] ?? '') == trimmed) return;
+    _undoData = null;
+    _showSnack(Snack(message: trimmed.isEmpty ? 'Not silindi' : 'Not kaydedildi', undoable: false));
+    final notes = {...card.notes};
+    if (trimmed.isEmpty) {
+      notes.remove(key);
+    } else {
+      notes[key] = trimmed;
+    }
+    _commit([
+      for (final c in _cards)
+        if (c.id == cardId) c.copyWith(notes: notes) else c,
+    ]);
+  }
+
+  /// Put a card away, or bring it back. Its records stay; while archived it
+  /// is off the grid, never late and never reminded.
+  void setArchived(String cardId, bool archived) {
+    final card = byId(cardId);
+    if (card == null || card.archived == archived) return;
+    _undoData = null;
+    _recordPulse = null;
+    _showSnack(Snack(
+      message: archived ? '“${card.name}” arşivlendi' : '“${card.name}” arşivden çıktı',
+      undoable: false,
+    ));
+    _commit([
+      for (final c in _cards)
+        if (c.id == cardId) c.copyWith(archived: archived) else c,
+    ]);
+  }
+
+  /// A card someone shared (see `domain/share.dart`), added as this person's
+  /// own copy. Returns its new id, or `null` if the same card — same name,
+  /// same records — is already here.
+  String? importSharedCard(Card shared) {
+    final exists = _cards.any((c) =>
+        lowerTr(c.name) == lowerTr(shared.name) &&
+        c.recs.length == shared.recs.length &&
+        c.recs.indexed.every((e) => shared.recs[e.$1] == e.$2));
+    if (exists) {
+      toast('“${shared.name}” zaten kartların arasında');
+      return null;
+    }
+    final card = shared.copyWith(
+      id: '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}-${_cards.length}',
+      name: capitalizeTr(shared.name),
+      created: _today,
+      notify: false,
+      archived: false,
+      clearRemindAt: true,
+    );
+    _undoData = null;
+    _showSnack(Snack(message: '“${card.name}” eklendi', undoable: false));
+    _commit([card, ..._cards]);
+    return card.id;
+  }
+
+  /// A share link opened from outside: add the card and show it.
+  void _importFromLink(Card shared) {
+    final id = importSharedCard(shared);
+    if (id != null) openCardRequest.value = id;
+  }
+
+  /// Every record as CSV (see [cardsCsv]); archived cards included.
+  String exportCsv() => cardsCsv(_cards);
+
   /// Rename a card, change its glyph or its declared rhythm. [every] of
   /// `null` hands the rhythm back to the learned median.
-  void updateCard(String cardId, {required String name, String? icon, int? every, bool? notify}) {
+  ///
+  /// [remindAt] (minutes after midnight) of `null` follows the global time.
+  void updateCard(
+    String cardId, {
+    required String name,
+    String? icon,
+    int? every,
+    bool? notify,
+    int? remindAt,
+  }) {
     final card = byId(cardId);
     final trimmed = name.trim();
     if (card == null || trimmed.isEmpty) return;
@@ -394,6 +516,8 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
             every: every,
             clearEvery: every == null,
             notify: notify,
+            remindAt: remindAt,
+            clearRemindAt: remindAt == null,
           )
         else
           c,
@@ -526,7 +650,11 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   /// Hands the home screen widgets what they draw. Skipped when nothing they
   /// show has changed (a record on an already-recorded day, say).
   void _syncWidgets() {
-    final snapshot = widgetSnapshot(_cards, _today, doneButton: _widgetDoneButton);
+    final snapshot = widgetSnapshot(
+      _cards.where((c) => !c.archived).toList(),
+      _today,
+      doneButton: _widgetDoneButton,
+    );
     if (snapshot == _publishedSnapshot) return;
     _publishedSnapshot = snapshot;
     unawaited(_homeWidgets.publish(snapshot));
@@ -619,7 +747,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
       toast('Bildirim izni kapalı. Telefon ayarlarından açabilirsin.');
       return;
     }
-    final sample = _cards.where((c) => c.notify).firstOrNull ?? _cards.firstOrNull;
+    final sample = _cards.where((c) => c.notify && !c.archived).firstOrNull ?? _cards.firstOrNull;
     final name = sample?.name ?? 'Saçımı kestirdim';
     final days = sample == null || sample.recs.isEmpty
         ? 30

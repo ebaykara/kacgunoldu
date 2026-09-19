@@ -229,6 +229,8 @@ void main() {
       await tester.tap(find.text('Bitkileri suladım'));
       await tester.pumpAndSettle();
       // The date shows twice — "Son kayıt" and the newest history row.
+      await tester.ensureVisible(find.text(formatFullDate(before.first)).last);
+      await tester.pumpAndSettle();
       await tester.tap(find.text(formatFullDate(before.first)).last);
       await tester.pumpAndSettle();
       await tapText(tester, 'Bu kaydı sil');
@@ -623,6 +625,101 @@ void main() {
       await reopened.init();
       expect(reopened.cards.map((c) => c.id), ['fresh', 'late']);
       reopened.dispose();
+    });
+  });
+
+  testWidgets('a note can be written on a record and shows in the history', (
+    tester,
+  ) async {
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      final newest = store.byId('fresh')!.recs.first;
+      await tester.tap(find.text('Bitkileri suladım'));
+      await tester.pumpAndSettle();
+      // Three gaps: the "Aralıklar" chart is there.
+      expect(find.text('Aralıklar'), findsOneWidget);
+
+      await tester.ensureVisible(find.text(formatFullDate(newest)).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(formatFullDate(newest)).last);
+      await tester.pumpAndSettle();
+      await tapText(tester, 'Not ekle');
+      await tester.enterText(find.byType(TextField), 'yarım bardak');
+      await tapText(tester, 'Kaydet');
+
+      expect(store.byId('fresh')!.notes, {newest: 'yarım bardak'});
+      expect(find.text('yarım bardak'), findsOneWidget);
+    });
+  });
+
+  testWidgets('archiving takes a card off the grid; the archive brings it back', (
+    tester,
+  ) async {
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      await tester.tap(find.text('Spor salonuna gittim'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Kart seçenekleri'));
+      await tester.pumpAndSettle();
+      await tapText(tester, 'Arşivle');
+
+      // Back on the grid: one card, no overdue pill, a way into the archive.
+      expect(find.byType(CardTile), findsOneWidget);
+      expect(find.text('1 kart gecikti'), findsNothing);
+      await tapText(tester, 'Arşiv (1)');
+      expect(find.text('Spor salonuna gittim'), findsOneWidget);
+
+      await tapText(tester, 'Spor salonuna gittim');
+      await tapText(tester, 'Arşivden çıkar');
+      expect(store.byId('late')!.archived, isFalse);
+      expect(store.cards.length, 2);
+    });
+  });
+
+  testWidgets('with enough cards, search and the filter chips narrow the grid', (
+    tester,
+  ) async {
+    final many = [
+      lateCard,
+      freshCard,
+      for (var i = 0; i < 4; i++) card('c$i', 'Kart $i', 1, [5, 5]),
+    ];
+    await runHome(tester, many, (store) async {
+      expect(find.text('Kartlarda ara'), findsOneWidget);
+
+      await tapText(tester, 'Gecikenler');
+      expect(find.byType(CardTile), findsOneWidget);
+      expect(find.text('Spor salonuna gittim'), findsOneWidget);
+
+      await tapText(tester, 'Tümü');
+      await tester.enterText(find.byType(TextField), 'bitki');
+      await tester.pumpAndSettle();
+      expect(find.byType(CardTile), findsOneWidget);
+      expect(find.text('Bitkileri suladım'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'yok böyle');
+      await tester.pumpAndSettle();
+      expect(find.text('Eşleşen kart yok.'), findsOneWidget);
+    });
+  });
+
+  testWidgets('few cards: no search bar', (tester) async {
+    await runHome(tester, [lateCard, freshCard], (store) async {
+      expect(find.text('Kartlarda ara'), findsNothing);
+    });
+  });
+
+  testWidgets('a ready-made card fills the form', (tester) async {
+    await runHome(tester, [freshCard], (store) async {
+      await tester.tap(find.text('Yeni kart'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hazır kartlar'), findsOneWidget);
+
+      await tapText(tester, 'Diş fırçamı değiştirdim');
+      expect(find.text('Hazır kartlar'), findsNothing);
+      await tapText(tester, 'Kartı oluştur');
+
+      final created = byName(store, 'Diş fırçamı değiştirdim');
+      expect(created.every, 90);
+      expect(created.icon, 'tooth');
     });
   });
 }

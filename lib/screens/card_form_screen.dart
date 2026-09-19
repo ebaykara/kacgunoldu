@@ -8,6 +8,7 @@ import '../domain/frequency.dart';
 import '../domain/icon_guess.dart';
 import '../domain/logic.dart';
 import '../domain/reminders.dart';
+import '../domain/templates.dart';
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
@@ -59,6 +60,10 @@ class _CardFormScreenState extends State<CardFormScreen> {
   /// Remind me when it comes due.
   bool _notify = false;
 
+  /// This card's own reminder time (minutes after midnight); `null` follows
+  /// the global one.
+  int? _remindAt;
+
   bool get _editing => widget.editCardId != null;
   bool get _valid => _controller.text.trim().isNotEmpty;
   bool get _reduceMotion => MediaQuery.of(context).disableAnimations;
@@ -73,6 +78,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
       _icon = existing.icon;
       _every = existing.every;
       _notify = existing.notify;
+      _remindAt = existing.remindAt;
     } else {
       _controller.text = widget.initialName ?? '';
       _icon = widget.initialIcon;
@@ -107,13 +113,54 @@ class _CardFormScreenState extends State<CardFormScreen> {
 
   String _notifyHint() {
     final store = widget.store;
-    final time = timeLabel(store.reminderHour, store.reminderMinute);
+    final time = _timeLabel();
     final existing = _editing ? store.byId(widget.editCardId!) : null;
     final hasRhythm = _every != null ||
         (existing != null && statsFor(existing, store.today).typical != null);
     return hasRhythm
         ? 'Sırası gelince saat $time civarı haber veririm.'
         : 'Ritmini öğrenince haber veririm (3 kayıttan sonra) ya da bir sıklık seç.';
+  }
+
+  String _timeLabel() {
+    final r = _remindAt;
+    final store = widget.store;
+    return r == null
+        ? timeLabel(store.reminderHour, store.reminderMinute)
+        : timeLabel(r ~/ 60, r % 60);
+  }
+
+  Future<void> _pickTime() async {
+    _focus.unfocus();
+    final store = widget.store;
+    final r = _remindAt;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: r == null
+          ? TimeOfDay(hour: store.reminderHour, minute: store.reminderMinute)
+          : TimeOfDay(hour: r ~/ 60, minute: r % 60),
+      helpText: 'Bu kartın hatırlatma saati',
+      cancelText: 'Vazgeç',
+      confirmText: 'Tamam',
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (picked == null) return;
+    final minutes = picked.hour * 60 + picked.minute;
+    final global = store.reminderHour * 60 + store.reminderMinute;
+    setState(() => _remindAt = minutes == global ? null : minutes);
+  }
+
+  void _applyTemplate(CardTemplate t) {
+    _controller.text = t.name;
+    _controller.selection = TextSelection.collapsed(offset: t.name.length);
+    setState(() {
+      _icon = t.icon;
+      _every = t.every;
+    });
+    _focus.unfocus();
   }
 
   void _submit() {
@@ -126,6 +173,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
         icon: _icon,
         every: _every,
         notify: _notify,
+        remindAt: _remindAt,
       );
     } else {
       store.addCard(
@@ -134,6 +182,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
         icon: _icon,
         every: _every,
         notify: _notify,
+        remindAt: _remindAt,
       );
     }
     Navigator.of(context).pop();
@@ -301,6 +350,10 @@ class _CardFormScreenState extends State<CardFormScreen> {
                     ],
                   ),
                 ),
+                if (!_editing && _controller.text.isEmpty) ...[
+                  const SizedBox(height: Space.s12),
+                  _Templates(onPick: _applyTemplate),
+                ],
                 if (!_editing) ...[
                   const SizedBox(height: Space.s22),
                   const _Label('Ne zaman yaptın?'),
@@ -420,54 +473,122 @@ class _CardFormScreenState extends State<CardFormScreen> {
                     horizontal: Space.s16,
                     vertical: Space.s12,
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(
-                        _notify
-                            ? Icons.notifications_active_rounded
-                            : Icons.notifications_none_rounded,
-                        color: _notify ? AppColor.primary : AppColor.onSurfaceMuted,
+                      Row(
+                        children: [
+                          Icon(
+                            _notify
+                                ? Icons.notifications_active_rounded
+                                : Icons.notifications_none_rounded,
+                            color: _notify ? AppColor.primary : AppColor.onSurfaceMuted,
+                          ),
+                          const SizedBox(width: Space.s12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Bana hatırlat',
+                                  style: ui(
+                                    14,
+                                    weight: FontWeight.w700,
+                                    color: AppColor.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _notifyHint(),
+                                  style: ui(
+                                    12,
+                                    color: AppColor.onSurfaceVariant,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Semantics(
+                            label: 'Bana hatırlat',
+                            toggled: _notify,
+                            child: Switch(
+                              value: _notify,
+                              onChanged: _toggleNotify,
+                              activeTrackColor: AppColor.primary,
+                              activeThumbColor: AppColor.onPrimary,
+                              inactiveTrackColor: AppColor.surfaceContainerHover,
+                              inactiveThumbColor: AppColor.surfaceBright,
+                              trackOutlineColor: WidgetStateProperty.all(
+                                Colors.transparent,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: Space.s12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Bana hatırlat',
-                              style: ui(
-                                14,
-                                weight: FontWeight.w700,
-                                color: AppColor.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _notifyHint(),
-                              style: ui(
-                                12,
-                                color: AppColor.onSurfaceVariant,
-                                height: 1.35,
-                              ),
-                            ),
-                          ],
+                      if (_notify) ...[
+                        const SizedBox(height: Space.s8),
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: AppColor.outlineTimeline,
                         ),
-                      ),
-                      Semantics(
-                        label: 'Bana hatırlat',
-                        toggled: _notify,
-                        child: Switch(
-                          value: _notify,
-                          onChanged: _toggleNotify,
-                          activeTrackColor: AppColor.primary,
-                          activeThumbColor: AppColor.onPrimary,
-                          inactiveTrackColor: AppColor.surfaceContainerHover,
-                          inactiveThumbColor: AppColor.surfaceBright,
-                          trackOutlineColor: WidgetStateProperty.all(
-                            Colors.transparent,
+                        PressScale(
+                          onTap: _pickTime,
+                          scale: 0.985,
+                          semanticsLabel: 'Hatırlatma saati ${_timeLabel()}',
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: Space.s12),
+                            child: ExcludeSemantics(
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.schedule_rounded,
+                                    size: 20,
+                                    color: AppColor.onSurfaceMuted,
+                                  ),
+                                  const SizedBox(width: Space.s12),
+                                  Expanded(
+                                    child: Text(
+                                      _remindAt == null
+                                          ? 'Saat (genel ayar)'
+                                          : 'Bu kartın saati',
+                                      style: ui(
+                                        13.5,
+                                        weight: FontWeight.w600,
+                                        color: AppColor.onSurface,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    _timeLabel(),
+                                    style: ui(
+                                      15,
+                                      weight: FontWeight.w700,
+                                      color: AppColor.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        if (_remindAt != null)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () => setState(() => _remindAt = null),
+                              child: Text(
+                                'Genel saate dön',
+                                style: ui(
+                                  12.5,
+                                  weight: FontWeight.w600,
+                                  color: AppColor.onSurfaceMuted,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ],
                   ),
                 ),
@@ -875,6 +996,84 @@ class _CustomFrequencyState extends State<_CustomFrequency> {
           label: 'Tamam',
           enabled: valid,
           onTap: () => widget.onDone(_days),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Hazır kartlar" — a sideways row of common cards under the empty name
+/// field. Gone as soon as something is typed.
+class _Templates extends StatelessWidget {
+  const _Templates({required this.onPick});
+
+  final ValueChanged<CardTemplate> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: Space.s8),
+          child: Text(
+            'Hazır kartlar',
+            style: ui(
+              12.5,
+              weight: FontWeight.w700,
+              color: AppColor.onSurfaceMuted,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 40,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            itemCount: cardTemplates.length,
+            separatorBuilder: (_, _) => const SizedBox(width: Space.s8),
+            itemBuilder: (context, i) {
+              final t = cardTemplates[i];
+              return PressScale(
+                onTap: () => onPick(t),
+                scale: 0.95,
+                haptic: true,
+                semanticsLabel: t.name,
+                child: Container(
+                  padding: const EdgeInsets.only(
+                    left: Space.s12,
+                    right: Space.s14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColor.surfaceBright,
+                    borderRadius: BorderRadius.circular(Radii.pill),
+                    border: Border.all(color: AppColor.outlineSheet),
+                  ),
+                  child: ExcludeSemantics(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CardGlyph(
+                          iconKey: t.icon,
+                          color: AppColor.primary,
+                          size: 16,
+                        ),
+                        const SizedBox(width: Space.s6),
+                        Text(
+                          t.name,
+                          style: ui(
+                            12.5,
+                            weight: FontWeight.w600,
+                            color: AppColor.onSurfaceMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ],
     );

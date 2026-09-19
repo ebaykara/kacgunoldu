@@ -17,6 +17,7 @@ dependencies:
 
   # Local-first storage. No backend — the whole app lives on the device.
   flutter_timezone: ^5.1.0
+  share_plus: ^13.3.0
   shared_preferences: ^2.3.3
   timezone: ^0.11.1
 

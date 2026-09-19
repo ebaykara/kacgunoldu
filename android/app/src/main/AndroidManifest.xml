@@ -3,9 +3,13 @@
          ones after a reboot or an app update. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- allowBackup: the cards live in shared_preferences, which Android's own
+         backup (Google account) carries to a new phone. Reminders are re-planned
+         from the cards on launch, so nothing else needs restoring. -->
     <application
         android:label="Kaç Gün Oldu?"
         android:name="${applicationName}"
+        android:allowBackup="true"
         android:icon="@mipmap/ic_launcher">
         <!-- Both activities keep the app's default task affinity (no
              taskAffinity attribute): with an empty one, a launch carrying
@@ -23,6 +27,14 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- A shared card, kacgunoldu://app/share/<data> (domain/share.dart).
+                 Passed on to MainActivity like a widget's card link. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="kacgunoldu" android:host="app" android:pathPrefix="/share/"/>
             </intent-filter>
         </activity>
         <activity

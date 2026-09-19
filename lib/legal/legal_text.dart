@@ -7,7 +7,7 @@ const legalEmail = 'info@gezip.app';
 
 const privacyPolicy = LegalDoc(
   title: 'Gizlilik Politikası',
-  updated: '19 Eylül 2026',
+  updated: '20 Eylül 2026',
   lead: '**Girdiğin kartlar ve kayıtlar hiçbir zaman toplanmaz, bir sunucuya gönderilmez ve kimseyle paylaşılmaz.** Yalnızca kendi cihazında kalır. Uygulamada hesap, reklam, analiz aracı ya da takip yoktur.',
   sections: [
     LegalSection('Genel Bakış', [
@@ -26,8 +26,8 @@ const privacyPolicy = LegalDoc(
     LegalSection('Cihazında Saklanan Bilgiler', [
       LegalBlock.p('Uygulamayı kullanırken girdiğin bilgiler yalnızca **kendi cihazında**, işletim sisteminin uygulamalara ayırdığı korumalı depolama alanında saklanır. Cihazındaki başka uygulamalar bu alana erişemez:'),
       LegalBlock.list([
-        'Oluşturduğun kartlar: ad, simge, seçtiğin sıklık ve hatırlatma tercihi',
-        'Her karta işaretlediğin tarihler',
+        'Oluşturduğun kartlar: ad, simge, seçtiğin sıklık, hatırlatma tercihi ve saati, arşivde olup olmadığı',
+        'Her karta işaretlediğin tarihler ve bu tarihlere yazdığın notlar',
         'İsteğe bağlı olarak girdiğin ad ve kullanıcı adı (yalnızca profil ekranında görünür)',
         'Uygulama tercihlerin: renk teması, kart düzeni (ızgara ya da liste), hatırlatma saati',
       ]),
@@ -38,7 +38,11 @@ const privacyPolicy = LegalDoc(
       LegalBlock.p('Ayrıca dilersen **Ayarlar → Yedeği panoya kopyala** ile verilerini metin olarak kopyalayabilir, başka bir cihazda **Panodaki yedeği geri yükle** ile içeri alabilirsin. Bu yedek şifrelenmemiş düz metindir; nereye yapıştıracağın sana bağlıdır.'),
     ]),
     LegalSection('Pano Kullanımı', [
-      LegalBlock.p('Uygulama panoya yalnızca sen “Yedeği panoya kopyala”ya ya da “Panodaki yedeği geri yükle”ye dokunduğunda erişir. Başka hiçbir zaman panonu okumaz. Bazı Android ve iOS sürümleri, bir uygulama panoya eriştiğinde seni bilgilendirir; bu beklenen bir davranıştır.'),
+      LegalBlock.p('Uygulama panoya yalnızca sen “Yedeği panoya kopyala”ya, “Panodaki yedeği geri yükle”ye ya da “Paylaşılan kartı ekle”ye dokunduğunda erişir. Başka hiçbir zaman panonu okumaz. Bazı Android ve iOS sürümleri, bir uygulama panoya eriştiğinde seni bilgilendirir; bu beklenen bir davranıştır.'),
+    ]),
+    LegalSection('Kart Paylaşma ve Dışa Aktarma', [
+      LegalBlock.p('Bir kartı **Paylaş** ile gönderdiğinde kartın adı, simgesi, sıklığı, tarihleri ve notları bir bağlantının içine yazılır ve telefonunun paylaşım menüsünden seçtiğin uygulamayla gönderilir. **Ayarlar → CSV olarak dışa aktar** da bütün kayıtlarını bir dosya olarak aynı menüye verir. İkisinde de veri hiçbir sunucumuzdan geçmez; nereye ve kime gideceğini sen seçersin ve o andan sonra seçtiğin uygulamanın kurallarına tabidir.'),
+      LegalBlock.p('Sana gönderilen bir kartı eklediğinde, kartın bir kopyası yalnızca senin cihazına kaydedilir. Kartlar sonradan eşitlenmez.'),
     ]),
     LegalSection('Hatırlatmalar', [
       LegalBlock.p('Bir karta “Bana hatırlat” dediğinde, kartın sırası geldiğinde seçtiğin saatte bir bildirim gösterilir. Bildirimler tamamen **cihazında** planlanır: zaman ve gösterilecek metin işletim sisteminin kendi bildirim sistemine verilir, hiçbir sunucuya gönderilmez. Uygulama anlık bildirim (push) altyapısı kullanmaz ve bildirim jetonu üretmez.'),
@@ -83,7 +87,7 @@ const privacyPolicy = LegalDoc(
 
 const termsOfUse = LegalDoc(
   title: 'Kullanım Koşulları',
-  updated: '19 Eylül 2026',
+  updated: '20 Eylül 2026',
   lead: '**Kaç Gün Oldu?** ücretsiz, çevrimdışı ve kişisel kullanım içindir. Verilerin yalnızca senin cihazında durur; bu yüzden **yedeklemek senin sorumluluğundadır** ve hatırlatmalar **kritik işler için tek başına güvenilecek bir araç değildir.** Aşağıda bunlar ve diğer koşullar var.',
   sections: [
     LegalSection('Kabul', [

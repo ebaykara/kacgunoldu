@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter/services.dart' show HapticFeedback;
+import 'package:share_plus/share_plus.dart';
 
 import '../domain/card.dart';
 import '../domain/date.dart';
 import '../domain/frequency.dart';
 import '../domain/logic.dart';
+import '../domain/share.dart';
 import '../domain/text.dart';
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
@@ -13,8 +15,10 @@ import '../widgets/app_sheet.dart';
 import '../widgets/card_glyph.dart';
 import '../widgets/confirm_destructive.dart';
 import '../widgets/day_count.dart';
+import '../widgets/gap_chart.dart';
 import '../widgets/halo.dart';
 import '../widgets/home_widget_help.dart';
+import '../widgets/note_sheet.dart';
 import '../widgets/record_sheet.dart';
 import '../widgets/rhythm_ring.dart';
 import '../widgets/store_snack.dart';
@@ -89,62 +93,105 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
             style: display(24, color: AppColor.onSurface, height: 1.14),
           ),
           const SizedBox(height: Space.s14),
-          ActionRow(
-            icon: card.notify
-                ? Icons.notifications_off_outlined
-                : Icons.notifications_active_outlined,
-            label: card.notify ? 'Hatırlatmayı kapat' : 'Bana hatırlat',
-            detail: card.notify
-                ? 'Bu kart için bildirim gelmiyor olacak'
-                : 'Sırası gelince bildirim gönder',
-            onTap: () async {
-              Navigator.of(sheetContext).pop();
-              final on = !card.notify;
-              if (await _store.setCardNotify(card.id, on) && on) {
-                _store.toast('Hatırlatma açıldı');
-              }
-            },
-          ),
-          ActionRow(
-            icon: Icons.edit_outlined,
-            label: 'Düzenle',
-            detail: 'Ad, simge ve sıklık',
-            onTap: () {
-              Navigator.of(sheetContext).pop();
-              pushPage<void>(
-                context,
-                (_) => CardFormScreen(store: _store, editCardId: card.id),
-              );
-            },
-          ),
-          ActionRow(
-            icon: Icons.event_available_outlined,
-            label: 'Başka bir gün ekle',
-            detail: 'Geçmişe kayıt ekle',
-            onTap: () {
-              Navigator.of(sheetContext).pop();
-              _pickDay();
-            },
-          ),
-          ActionRow(
-            icon: Icons.widgets_outlined,
-            label: 'Ana ekrana ekle',
-            detail: 'Bu kartı widget olarak göster',
-            onTap: () {
-              Navigator.of(sheetContext).pop();
-              if (_store.canPinWidget) {
-                pinHomeWidget(context, _store, card: card);
-              } else {
-                showHomeWidgetHelp(context, card: card);
-              }
-            },
-          ),
-          ActionRow(
-            icon: Icons.delete_outline_rounded,
-            label: 'Kartı sil',
-            detail: 'Bütün kayıtlarıyla birlikte',
-            destructive: true,
-            onTap: () => _confirmDelete(sheetContext, card),
+          // Eight rows outgrow a small phone (more so with large text): the
+          // rows scroll, the title and grabber still drag the sheet away.
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.62,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ActionRow(
+                    icon: card.notify
+                        ? Icons.notifications_off_outlined
+                        : Icons.notifications_active_outlined,
+                    label: card.notify ? 'Hatırlatmayı kapat' : 'Bana hatırlat',
+                    detail: card.notify
+                        ? 'Bu kart için bildirim gelmiyor olacak'
+                        : 'Sırası gelince bildirim gönder',
+                    onTap: () async {
+                      Navigator.of(sheetContext).pop();
+                      final on = !card.notify;
+                      if (await _store.setCardNotify(card.id, on) && on) {
+                        _store.toast('Hatırlatma açıldı');
+                      }
+                    },
+                  ),
+                  ActionRow(
+                    icon: Icons.edit_outlined,
+                    label: 'Düzenle',
+                    detail: 'Ad, simge ve sıklık',
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      pushPage<void>(
+                        context,
+                        (_) =>
+                            CardFormScreen(store: _store, editCardId: card.id),
+                      );
+                    },
+                  ),
+                  ActionRow(
+                    icon: Icons.event_available_outlined,
+                    label: 'Başka bir gün ekle',
+                    detail: 'Geçmişe kayıt ekle',
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _pickDay();
+                    },
+                  ),
+                  ActionRow(
+                    icon: Icons.widgets_outlined,
+                    label: 'Ana ekrana ekle',
+                    detail: 'Bu kartı widget olarak göster',
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      if (_store.canPinWidget) {
+                        pinHomeWidget(context, _store, card: card);
+                      } else {
+                        showHomeWidgetHelp(context, card: card);
+                      }
+                    },
+                  ),
+                  ActionRow(
+                    icon: Icons.ios_share_rounded,
+                    label: 'Paylaş',
+                    detail: 'Kartın bir kopyasını birine gönder',
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      SharePlus.instance.share(
+                        ShareParams(
+                          text: shareMessage(card),
+                          subject: card.name,
+                        ),
+                      );
+                    },
+                  ),
+                  ActionRow(
+                    icon: card.archived
+                        ? Icons.unarchive_outlined
+                        : Icons.archive_outlined,
+                    label: card.archived ? 'Arşivden çıkar' : 'Arşivle',
+                    detail: card.archived
+                        ? 'Kartlarının arasına geri döner'
+                        : 'Kayıtlar kalır; listeden kalkar, hatırlatılmaz',
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _store.setArchived(card.id, !card.archived);
+                      if (!card.archived) Navigator.of(context).maybePop();
+                    },
+                  ),
+                  ActionRow(
+                    icon: Icons.delete_outline_rounded,
+                    label: 'Kartı sil',
+                    detail: 'Bütün kayıtlarıyla birlikte',
+                    destructive: true,
+                    onTap: () => _confirmDelete(sheetContext, card),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -189,7 +236,26 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
             relativeLabel(daysSince(key, today)),
             style: ui(12.5, color: AppColor.onSurfaceVariant),
           ),
+          if (card.notes[key] != null) ...[
+            const SizedBox(height: Space.s12),
+            Panel(
+              color: AppColor.surfaceContainer,
+              child: Text(
+                card.notes[key]!,
+                style: ui(14, color: AppColor.onSurface, height: 1.4),
+              ),
+            ),
+          ],
           const SizedBox(height: Space.s14),
+          ActionRow(
+            icon: Icons.sticky_note_2_outlined,
+            label: card.notes[key] == null ? 'Not ekle' : 'Notu düzenle',
+            detail: 'Örn. kilometre, ne yapıldığı',
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              _editNote(card, key);
+            },
+          ),
           ActionRow(
             icon: Icons.edit_calendar_outlined,
             label: 'Tarihi değiştir',
@@ -220,6 +286,21 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _editNote(Card card, DateKey key) async {
+    await showAppSheet<void>(
+      context: context,
+      reduceMotion: _reduceMotion,
+      builder: (sheetContext) => NoteSheet(
+        dateLabel: formatFullDate(key),
+        initial: card.notes[key] ?? '',
+        onSave: (text) {
+          Navigator.of(sheetContext).pop();
+          _store.setNote(card.id, key, text);
+        },
       ),
     );
   }
@@ -258,6 +339,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
     final nonce = pulse?.id == card.id ? pulse?.nonce : null;
     final reduceMotion = media.disableAnimations;
 
+    final gaps = recordGaps(card);
     final history = _showAll
         ? card.recs
         : card.recs.take(_historyPreview).toList();
@@ -331,6 +413,54 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
               color: AppColor.onSurfaceVariant,
             ),
           ),
+          if (card.archived)
+            Padding(
+              padding: const EdgeInsets.only(
+                top: Space.s14,
+                left: Space.s18,
+                right: Space.s18,
+              ),
+              child: Panel(
+                color: AppColor.surfaceContainer,
+                padding: const EdgeInsets.only(
+                  left: Space.s16,
+                  right: Space.xs,
+                  top: Space.xs,
+                  bottom: Space.xs,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.archive_outlined,
+                      size: 18,
+                      color: AppColor.onSurfaceMuted,
+                    ),
+                    const SizedBox(width: Space.s8),
+                    Expanded(
+                      child: Text(
+                        'Bu kart arşivde',
+                        style: ui(
+                          13,
+                          weight: FontWeight.w600,
+                          color: AppColor.onSurfaceMuted,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _store.setArchived(card.id, false),
+                      child: Text(
+                        'Arşivden çıkar',
+                        style: ui(
+                          13,
+                          weight: FontWeight.w700,
+                          color: AppColor.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           const SizedBox(height: Space.s22),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Space.s18),
@@ -493,6 +623,23 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
             icon: Icons.calendar_month_outlined,
             onTap: _pickDay,
           ),
+          if (gaps.length >= 2)
+            Padding(
+              padding: const EdgeInsets.only(
+                top: Space.s14,
+                left: Space.s18,
+                right: Space.s18,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SectionTitle('Aralıklar'),
+                  Panel(
+                    child: GapChart(gaps: gaps, typical: stats.typical),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: Space.s14),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Space.s18),
@@ -543,6 +690,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                                 ? daysSince(card.recs[i + 1], history[i])
                                 : null,
                             latest: i == 0,
+                            note: card.notes[history[i]],
                             onTap: () => _openRecord(card, history[i]),
                           ),
                         ],
@@ -602,12 +750,16 @@ class _HistoryRow extends StatelessWidget {
     required this.dateKey,
     required this.gap,
     required this.latest,
+    required this.note,
     required this.onTap,
   });
 
   final DateKey dateKey;
   final int? gap;
   final bool latest;
+
+  /// The record's note, shown under the date.
+  final String? note;
   final VoidCallback onTap;
 
   @override
@@ -616,7 +768,8 @@ class _HistoryRow extends StatelessWidget {
       onTap: onTap,
       scale: 0.985,
       semanticsLabel:
-          '${formatFullDate(dateKey)}${gap != null ? ', $gap gün arayla' : ''}',
+          '${formatFullDate(dateKey)}${gap != null ? ', $gap gün arayla' : ''}'
+          '${note != null ? ', not: $note' : ''}',
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: Space.s16,
@@ -643,13 +796,27 @@ class _HistoryRow extends StatelessWidget {
               ),
               const SizedBox(width: Space.s12),
               Expanded(
-                child: Text(
-                  formatFullDate(dateKey),
-                  style: ui(
-                    14,
-                    weight: FontWeight.w600,
-                    color: AppColor.onSurface,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      formatFullDate(dateKey),
+                      style: ui(
+                        14,
+                        weight: FontWeight.w600,
+                        color: AppColor.onSurface,
+                      ),
+                    ),
+                    if (note != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        note!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: ui(12.5, color: AppColor.onSurfaceVariant),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (gap != null)

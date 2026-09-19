@@ -7,6 +7,10 @@ import 'date.dart';
 /// computed: the glyph they picked, the rhythm they declared ("haftada bir")
 /// and the day the card was made. All three are optional so cards written by
 /// older builds still load.
+///
+/// [notes], [archived] and [remindAt] are the same kind of input: a line
+/// written on a record ("45.200 km"), a card put away for now, and a time of
+/// day for this card's reminders that differs from the global one.
 class Card {
   const Card({
     required this.id,
@@ -16,6 +20,9 @@ class Card {
     this.every,
     this.created,
     this.notify = false,
+    this.notes = const {},
+    this.archived = false,
+    this.remindAt,
   });
 
   final String id;
@@ -35,6 +42,18 @@ class Card {
   /// The person asked to be reminded when this comes due.
   final bool notify;
 
+  /// A note per record day. A key always names a day in [recs] — removing or
+  /// moving a record takes its note with it (see `CardStore`).
+  final Map<DateKey, String> notes;
+
+  /// Put away: hidden from the grid, never late, never reminded, not on the
+  /// home screen widgets. Its records stay as they are.
+  final bool archived;
+
+  /// This card's reminder time as minutes after midnight; `null` follows the
+  /// global "Hatırlatma saati".
+  final int? remindAt;
+
   Card copyWith({
     String? id,
     String? name,
@@ -45,6 +64,10 @@ class Card {
     bool clearEvery = false,
     DateKey? created,
     bool? notify,
+    Map<DateKey, String>? notes,
+    bool? archived,
+    int? remindAt,
+    bool clearRemindAt = false,
   }) => Card(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -53,6 +76,9 @@ class Card {
     every: clearEvery ? null : every ?? this.every,
     created: created ?? this.created,
     notify: notify ?? this.notify,
+    notes: notes ?? this.notes,
+    archived: archived ?? this.archived,
+    remindAt: clearRemindAt ? null : remindAt ?? this.remindAt,
   );
 
   Map<String, Object?> toJson() => {
@@ -63,6 +89,9 @@ class Card {
     if (every != null) 'every': every,
     if (created != null) 'created': created,
     if (notify) 'notify': true,
+    if (notes.isNotEmpty) 'notes': notes,
+    if (archived) 'archived': true,
+    if (remindAt != null) 'remindAt': remindAt,
   };
 
   /// Returns `null` for anything that is not a well-formed card, so a corrupt
@@ -82,6 +111,18 @@ class Card {
     final icon = value['icon'];
     final every = value['every'];
     final created = value['created'];
+    final remindAt = value['remindAt'];
+    final notes = <DateKey, String>{};
+    final rawNotes = value['notes'];
+    if (rawNotes is Map) {
+      for (final e in rawNotes.entries) {
+        final k = e.key;
+        final v = e.value;
+        if (k is String && parsed.contains(k) && v is String && v.trim().isNotEmpty) {
+          notes[k] = v.trim();
+        }
+      }
+    }
     return Card(
       id: id,
       name: name,
@@ -90,6 +131,9 @@ class Card {
       every: every is int && every > 0 ? every : null,
       created: created is String && _dateKey.hasMatch(created) ? created : null,
       notify: value['notify'] == true,
+      notes: notes,
+      archived: value['archived'] == true,
+      remindAt: remindAt is int && remindAt >= 0 && remindAt < 24 * 60 ? remindAt : null,
     );
   }
 

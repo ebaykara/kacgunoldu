@@ -46,3 +46,15 @@ void _stableSort<T>(List<T> list, int Function(T a, T b) compare) {
     list[i] = indexed[i].$2;
   }
 }
+
+/// A drag inside a filtered grid only rearranges the cards on show. Their new
+/// order is written back into the slots they held in the full order [all];
+/// every card that was filtered out keeps its place.
+List<String> mergeSubsetOrder(List<String> all, List<String> subset) {
+  final inSubset = subset.toSet();
+  final next = subset.iterator;
+  return [
+    for (final id in all)
+      if (inSubset.contains(id) && next.moveNext()) next.current else id,
+  ];
+}

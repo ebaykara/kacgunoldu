@@ -2,7 +2,9 @@ import 'package:flutter/material.dart' hide Card;
 
 import '../domain/card.dart';
 import '../domain/date.dart';
+import '../domain/filter.dart';
 import '../domain/logic.dart';
+import '../domain/order.dart';
 import '../domain/text.dart';
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
@@ -15,6 +17,7 @@ import '../widgets/fab.dart';
 import '../widgets/header.dart';
 import '../widgets/timeline.dart';
 import '../widgets/ui.dart';
+import 'archive_screen.dart';
 import 'card_detail_screen.dart';
 import 'card_form_screen.dart';
 import 'late_screen.dart';
@@ -32,6 +35,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   AppTab _tab = AppTab.cards;
   TimelineRange _range = TimelineRange.all;
+
+  /// The search and filter bar above the grid.
+  CardFilter _filter = CardFilter.all;
+  final _search = TextEditingController();
 
   /// Both tabs keep their own scroll position.
   final _cardsScroll = ScrollController();
@@ -60,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     widget.store.openCardRequest.removeListener(_openRequestedCard);
     _cardsScroll.dispose();
     _timeScroll.dispose();
+    _search.dispose();
     super.dispose();
   }
 
@@ -89,6 +97,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openProfile() =>
       pushPage<void>(context, (_) => ProfileScreen(store: widget.store));
+
+  void _openArchive() =>
+      pushPage<void>(context, (_) => ArchiveScreen(store: widget.store));
+
+  /// "Arşiv (3)" — under the grid, or on the empty state when every card is
+  /// archived. Nothing when the archive is empty.
+  Widget _archiveLink() {
+    final n = widget.store.archivedCards.length;
+    if (n == 0) return const SizedBox.shrink();
+    return QuietButton(
+      label: 'Arşiv ($n)',
+      icon: Icons.archive_outlined,
+      onTap: _openArchive,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +143,13 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: _openProfile,
             ),
           ),
+          if (store.archivedCards.isNotEmpty)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: media.padding.bottom + Space.s8,
+              child: Center(child: _archiveLink()),
+            ),
           _snackbar(media.padding.bottom + Space.s16, reduceMotion),
         ],
       );
@@ -129,6 +159,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // arrangement or, failing that, urgency. Decorating preserves that order.
     final decorated = cards.map((c) => decorate(c, store.today)).toList();
     final lateCount = decorated.where((c) => c.stats.isLate).length;
+    final query = _search.text;
+    final filtering = _filter != CardFilter.all || query.trim().isNotEmpty;
+    final shown = filterCards(decorated, _filter, query);
+    final showBar = filtering || decorated.length >= filterBarMinCards;
 
     // Two fixed columns, derived from the window.
     final isList = store.layout == CardLayout.list;
@@ -169,15 +203,52 @@ class _HomeScreenState extends State<HomeScreen> {
                         right: Space.s18,
                         bottom: scrollBottom,
                       ),
-                      child: DraggableCardGrid(
-                        cards: decorated,
-                        columnWidth: columnWidth,
-                        list: isList,
-                        onTapCard: (card) => _openCard(card.id),
-                        onReorder: store.reorder,
-                        recordPulseId: pulse?.id,
-                        recordPulseNonce: pulse?.nonce,
-                        reduceMotion: reduceMotion,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (showBar)
+                            _FilterBar(
+                              controller: _search,
+                              filter: _filter,
+                              onFilter: (f) => setState(() => _filter = f),
+                              onQuery: () => setState(() {}),
+                            ),
+                          if (filtering && shown.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.all(Space.s22),
+                              child: Text(
+                                'Eşleşen kart yok.',
+                                textAlign: TextAlign.center,
+                                style: ui(
+                                  13.5,
+                                  color: AppColor.onSurfaceVariant,
+                                ),
+                              ),
+                            )
+                          else
+                            DraggableCardGrid(
+                              cards: shown,
+                              columnWidth: columnWidth,
+                              list: isList,
+                              onTapCard: (card) => _openCard(card.id),
+                              // A drag in a filtered grid moves only the
+                              // cards on show; the rest keep their places.
+                              onReorder: filtering
+                                  ? (ids) => store.reorder(
+                                      mergeSubsetOrder([
+                                        for (final c in decorated) c.id,
+                                      ], ids),
+                                    )
+                                  : store.reorder,
+                              recordPulseId: pulse?.id,
+                              recordPulseNonce: pulse?.nonce,
+                              reduceMotion: reduceMotion,
+                            ),
+                          if (!filtering) ...[
+                            const SizedBox(height: Space.s8),
+                            _archiveLink(),
+                          ],
+                        ],
                       ),
                     ),
                   ),
@@ -333,6 +404,126 @@ class _TimelineTab extends StatelessWidget {
                 ),
         ),
       ],
+    );
+  }
+}
+
+/// Search plus "Tümü · Gecikenler · Sırası yakın" above the grid. Only shown
+/// once there are enough cards to need it (see [filterBarMinCards]).
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({
+    required this.controller,
+    required this.filter,
+    required this.onFilter,
+    required this.onQuery,
+  });
+
+  final TextEditingController controller;
+  final CardFilter filter;
+  final ValueChanged<CardFilter> onFilter;
+  final VoidCallback onQuery;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.s14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 44,
+            padding: const EdgeInsets.only(left: Space.s14, right: Space.xs),
+            decoration: BoxDecoration(
+              color: AppColor.surfaceContainer,
+              borderRadius: BorderRadius.circular(Radii.pill),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.search_rounded, size: 20, color: AppColor.outline),
+                const SizedBox(width: Space.s8),
+                Expanded(
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: TextField(
+                      controller: controller,
+                      onChanged: (_) => onQuery(),
+                      textInputAction: TextInputAction.search,
+                      cursorColor: AppColor.primary,
+                      style: ui(
+                        14,
+                        weight: FontWeight.w600,
+                        color: AppColor.onSurface,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        hintText: 'Kartlarda ara',
+                        hintStyle: ui(
+                          14,
+                          weight: FontWeight.w500,
+                          color: AppColor.outline,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (controller.text.isNotEmpty)
+                  RoundIconButton(
+                    icon: Icons.close_rounded,
+                    label: 'Aramayı temizle',
+                    onTap: () {
+                      controller.clear();
+                      onQuery();
+                    },
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Space.s8),
+          Row(
+            children: [
+              for (final f in CardFilter.values) ...[
+                if (f != CardFilter.all) const SizedBox(width: Space.s8),
+                Expanded(
+                  child: PressScale(
+                    onTap: () => onFilter(f),
+                    scale: 0.95,
+                    haptic: true,
+                    selected: filter == f,
+                    semanticsLabel: cardFilterLabels[f],
+                    child: AnimatedContainer(
+                      duration: Motion.hover,
+                      height: 34,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(horizontal: Space.s8),
+                      decoration: BoxDecoration(
+                        color: filter == f
+                            ? AppColor.primary
+                            : AppColor.surfaceContainer,
+                        borderRadius: BorderRadius.circular(Radii.pill),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          cardFilterLabels[f]!,
+                          maxLines: 1,
+                          style: ui(
+                            12.5,
+                            weight: FontWeight.w700,
+                            color: filter == f
+                                ? AppColor.onPrimary
+                                : AppColor.onSurfaceMuted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

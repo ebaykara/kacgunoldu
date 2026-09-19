@@ -13,8 +13,8 @@ Block kinds: ("p", text) ("ul", [items]) ("callout", text) ("contact", None)
 
 EMAIL = "info@gezip.app"
 DEVELOPER = "EMA Labs"
-UPDATED_TR = "19 Eylül 2026"
-UPDATED_EN = "19 September 2026"
+UPDATED_TR = "20 Eylül 2026"
+UPDATED_EN = "20 September 2026"
 APPLE_EULA = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
 
 # --------------------------------------------------------------------------
@@ -45,8 +45,8 @@ PRIVACY_TR = dict(
         ("Cihazında Saklanan Bilgiler", [
             ("p", "Uygulamayı kullanırken girdiğin bilgiler yalnızca **kendi cihazında**, işletim sisteminin uygulamalara ayırdığı korumalı depolama alanında saklanır. Cihazındaki başka uygulamalar bu alana erişemez:"),
             ("ul", [
-                "Oluşturduğun kartlar: ad, simge, seçtiğin sıklık ve hatırlatma tercihi",
-                "Her karta işaretlediğin tarihler",
+                "Oluşturduğun kartlar: ad, simge, seçtiğin sıklık, hatırlatma tercihi ve saati, arşivde olup olmadığı",
+                "Her karta işaretlediğin tarihler ve bu tarihlere yazdığın notlar",
                 "İsteğe bağlı olarak girdiğin ad ve kullanıcı adı (yalnızca profil ekranında görünür)",
                 "Uygulama tercihlerin: renk teması, kart düzeni (ızgara ya da liste), hatırlatma saati",
             ]),
@@ -57,7 +57,11 @@ PRIVACY_TR = dict(
             ("p", "Ayrıca dilersen **Ayarlar → Yedeği panoya kopyala** ile verilerini metin olarak kopyalayabilir, başka bir cihazda **Panodaki yedeği geri yükle** ile içeri alabilirsin. Bu yedek şifrelenmemiş düz metindir; nereye yapıştıracağın sana bağlıdır."),
         ]),
         ("Pano Kullanımı", [
-            ("p", "Uygulama panoya yalnızca sen “Yedeği panoya kopyala”ya ya da “Panodaki yedeği geri yükle”ye dokunduğunda erişir. Başka hiçbir zaman panonu okumaz. Bazı Android ve iOS sürümleri, bir uygulama panoya eriştiğinde seni bilgilendirir; bu beklenen bir davranıştır."),
+            ("p", "Uygulama panoya yalnızca sen “Yedeği panoya kopyala”ya, “Panodaki yedeği geri yükle”ye ya da “Paylaşılan kartı ekle”ye dokunduğunda erişir. Başka hiçbir zaman panonu okumaz. Bazı Android ve iOS sürümleri, bir uygulama panoya eriştiğinde seni bilgilendirir; bu beklenen bir davranıştır."),
+        ]),
+        ("Kart Paylaşma ve Dışa Aktarma", [
+            ("p", "Bir kartı **Paylaş** ile gönderdiğinde kartın adı, simgesi, sıklığı, tarihleri ve notları bir bağlantının içine yazılır ve telefonunun paylaşım menüsünden seçtiğin uygulamayla gönderilir. **Ayarlar → CSV olarak dışa aktar** da bütün kayıtlarını bir dosya olarak aynı menüye verir. İkisinde de veri hiçbir sunucumuzdan geçmez; nereye ve kime gideceğini sen seçersin ve o andan sonra seçtiğin uygulamanın kurallarına tabidir."),
+            ("p", "Sana gönderilen bir kartı eklediğinde, kartın bir kopyası yalnızca senin cihazına kaydedilir. Kartlar sonradan eşitlenmez."),
         ]),
         ("Hatırlatmalar", [
             ("p", "Bir karta “Bana hatırlat” dediğinde, kartın sırası geldiğinde seçtiğin saatte bir bildirim gösterilir. Bildirimler tamamen **cihazında** planlanır: zaman ve gösterilecek metin işletim sisteminin kendi bildirim sistemine verilir, hiçbir sunucuya gönderilmez. Uygulama anlık bildirim (push) altyapısı kullanmaz ve bildirim jetonu üretmez."),
@@ -235,8 +239,8 @@ PRIVACY_EN = dict(
         ("What Is Stored On Your Device", [
             ("p", "What you enter is stored **only on your own device**, in the protected storage area the operating system gives the App. Other apps on your device cannot access it:"),
             ("ul", [
-                "The cards you create: name, icon, the frequency you choose and your reminder preference",
-                "The dates you mark on each card",
+                "The cards you create: name, icon, the frequency you choose, your reminder preference and time, and whether a card is archived",
+                "The dates you mark on each card and any notes you write on them",
                 "Optionally, a name and username (shown only on the profile screen)",
                 "Your preferences: colour theme, card layout (grid or list), reminder time",
             ]),
@@ -247,7 +251,11 @@ PRIVACY_EN = dict(
             ("p", "You can also use **Settings → Yedeği panoya kopyala** to copy your data as text, and **Panodaki yedeği geri yükle** to import it on another device. That backup is unencrypted plain text; where you paste it is up to you."),
         ]),
         ("Clipboard", [
-            ("p", "The App accesses the clipboard only when you tap “copy backup” or “restore backup”. It never reads your clipboard at any other time. Some versions of Android and iOS notify you when an app accesses the clipboard; that is expected."),
+            ("p", "The App accesses the clipboard only when you tap “copy backup”, “restore backup” or “add a shared card”. It never reads your clipboard at any other time. Some versions of Android and iOS notify you when an app accesses the clipboard; that is expected."),
+        ]),
+        ("Sharing And Exporting", [
+            ("p", "When you send a card with **Share**, the card's name, icon, frequency, dates and notes are written into a link and sent with the app you pick in your phone's share menu. **Settings → CSV olarak dışa aktar** hands all your records to the same menu as a file. In both cases the data never passes through a server of ours; you choose where it goes and to whom, and from then on it is subject to the rules of the app you chose."),
+            ("p", "When you add a card someone sent you, a copy of it is saved on your device only. Cards are not synced afterwards."),
         ]),
         ("Reminders", [
             ("p", "When you turn on “Bana hatırlat” for a card, a notification is shown at your chosen time when the card is due. Notifications are scheduled entirely **on your device**: the time and text are handed to the operating system's own notification service and are never sent to any server. The App uses no push infrastructure and creates no notification tokens."),

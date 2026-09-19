@@ -49,8 +49,9 @@ int reminderId(String cardId, int slot) {
 /// nothing about notifications is stored except the "notify" flag and the
 /// time of day.
 ///
-/// Per marked card that has a rhythm (declared or learned):
-///  * **due** — on the day the usual interval runs out, at [hour]:[minute];
+/// Per marked, unarchived card that has a rhythm (declared or learned):
+///  * **due** — on the day the usual interval runs out, at [hour]:[minute]
+///    (or the card's own `remindAt`);
 ///  * **follow-up** — [followUpAfterDays] days later, if it still isn't done;
 ///  * **nudge** — if both of those are already in the past (a card that has
 ///    been late for a while), one for the next [hour]:[minute].
@@ -63,14 +64,18 @@ List<Reminder> planReminders(
   int minute = defaultReminderMinute,
 }) {
   final today = todayKey(now);
-  DateTime at(DateKey key) {
-    final d = fromDateKey(key);
-    return DateTime(d.year, d.month, d.day, hour, minute);
-  }
 
   final out = <Reminder>[];
   for (final card in cards) {
-    if (!card.notify || card.recs.isEmpty) continue;
+    if (!card.notify || card.archived || card.recs.isEmpty) continue;
+    // A card's own time wins over the global one.
+    final h = card.remindAt != null ? card.remindAt! ~/ 60 : hour;
+    final m = card.remindAt != null ? card.remindAt! % 60 : minute;
+    DateTime at(DateKey key) {
+      final d = fromDateKey(key);
+      return DateTime(d.year, d.month, d.day, h, m);
+    }
+
     final typical = statsFor(card, today).typical;
     if (typical == null) continue;
 

@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kac_gun_oldu/domain/card.dart';
 import 'package:kac_gun_oldu/domain/date.dart';
+import 'package:kac_gun_oldu/domain/reminders.dart';
 import 'package:kac_gun_oldu/state/card_store.dart';
 import 'package:kac_gun_oldu/storage/repository.dart';
 import 'package:kac_gun_oldu/theme/tokens.dart';
@@ -170,7 +172,9 @@ void main() {
         // typical 4, last 6 days ago: long overdue -> one nudge.
         await Future<void>.delayed(Duration.zero);
         expect(fake.plan.length, 1);
-        expect(fake.plan.first.body, contains('gün geçti'));
+        // A "still not done" one — the follow-up before 09:00 today, the
+        // nudge after. Its wording is picked per day, so not asserted.
+        expect([reminderId('p', 1), reminderId('p', 2)], contains(fake.plan.first.id));
 
         store.record('p', 0);
         await Future<void>.delayed(Duration.zero);
@@ -243,6 +247,97 @@ void main() {
       expect(store.importJson(backup), 1);
       expect(store.byId('p')!.notify, isTrue);
       store.dispose();
+    });
+  });
+
+  group('notes', () {
+    test('a note follows its record: removed with it, moved with it, undone with it', () async {
+      await withStore([plants], (store) async {
+        final recs = [...store.byId('p')!.recs];
+        store.setNote('p', recs[1], '  yarım bardak  ');
+        expect(store.byId('p')!.notes, {recs[1]: 'yarım bardak'});
+
+        store.moveRecord('p', recs[1], shiftDays(t, -4));
+        expect(store.byId('p')!.notes, {shiftDays(t, -4): 'yarım bardak'});
+        store.undo();
+        expect(store.byId('p')!.notes, {recs[1]: 'yarım bardak'});
+
+        store.removeRecord('p', recs[1]);
+        expect(store.byId('p')!.notes, isEmpty);
+        store.undo();
+        expect(store.byId('p')!.notes, {recs[1]: 'yarım bardak'});
+
+        store.setNote('p', recs[1], '');
+        expect(store.byId('p')!.notes, isEmpty);
+      });
+    });
+
+    test('notes are kept across a restart', () async {
+      await withStore([plants], (store) async {
+        final day = store.byId('p')!.recs.first;
+        store.setNote('p', day, 'gübre');
+        await Future<void>.delayed(Duration.zero);
+        final reopened = CardStore();
+        await reopened.init();
+        expect(reopened.byId('p')!.notes, {day: 'gübre'});
+        reopened.dispose();
+      });
+    });
+  });
+
+  test('an archived card leaves the grid and the reminders, keeps its records', () async {
+    final fake = FakeReminders();
+    SharedPreferences.setMockInitialValues({
+      'nezaman.cards.v1': jsonEncode([
+        {
+          ...plants,
+          'notify': true,
+          'recs': [shiftDays(t, -1), shiftDays(t, -5), shiftDays(t, -9)],
+        },
+      ]),
+    });
+    final store = CardStore(reminders: fake);
+    await store.init();
+    try {
+      await Future<void>.delayed(Duration.zero);
+      expect(fake.plan, isNotEmpty);
+
+      store.setArchived('p', true);
+      await Future<void>.delayed(Duration.zero);
+      expect(store.cards, isEmpty);
+      expect(store.archivedCards.single.recs.length, 3);
+      expect(store.hasAnyCards, isTrue);
+      expect(store.reminderCount, 0);
+      expect(fake.plan, isEmpty);
+
+      store.setArchived('p', false);
+      await Future<void>.delayed(Duration.zero);
+      expect(store.cards.single.id, 'p');
+      expect(fake.plan, isNotEmpty);
+    } finally {
+      store.dispose();
+    }
+  });
+
+  test('a shared card is added once, as a fresh copy', () async {
+    await withStore([plants], (store) async {
+      final shared = Card(
+        id: '',
+        name: 'yağ değişimi',
+        recs: [shiftDays(t, -30)],
+        every: 180,
+        notify: true,
+      );
+      final id = store.importSharedCard(shared)!;
+      final added = store.byId(id)!;
+      expect(added.name, 'Yağ değişimi');
+      expect(added.every, 180);
+      expect(added.notify, isFalse);
+      expect(added.created, t);
+      expect(store.cards.length, 2);
+
+      expect(store.importSharedCard(shared), isNull);
+      expect(store.cards.length, 2);
     });
   });
 }

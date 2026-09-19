@@ -21,7 +21,7 @@ flutter analyze   # 0 uyarı olmalı
 ```
 
 ```bash
-flutter test      # 158 test, hepsi geçmeli
+flutter test      # 182 test, hepsi geçmeli
 ```
 
 ```bash
@@ -41,11 +41,17 @@ lib/
                             · Elevation · Motion · Layout
   theme/system_bars.dart    çubuk stili + SystemBarsRegion (kökte; bkz. tuzak 16)
   theme/typography.dart     ui() · display() · overline()
-  domain/card.dart          Card (+ isteğe bağlı icon/every/created) · Tier · AppTab
+  domain/card.dart          Card (+ isteğe bağlı icon/every/created/notes/archived/remindAt)
+                            · Tier · AppTab
   domain/date.dart          DateKey aritmetiği, Türkçe tarih biçimleri
   domain/logic.dart         tiers · typicalInterval · statsFor · decorate · orderCards
                             · averageGap
   domain/order.dart         applyOrder — otomatik sıra vs kalıcı sürükleme sırası
+                            · mergeSubsetOrder (filtreliyken sürükleme)
+  domain/filter.dart        arama + Tümü/Gecikenler/Sırası yakın (6+ kartta görünür)
+  domain/share.dart         sunucusuz kart paylaşımı (kacgunoldu://app/share/<base64url>)
+                            · cardsCsv (CSV dışa aktarma)
+  domain/templates.dart     Yeni kart'taki "Hazır kartlar"
   domain/text.dart          capitalizeTr · upperTr · lowerTr · initialsOf
   domain/frequency.dart     "Ne sıklıkla" çipleri (Her gün … Yılda bir)
   domain/icon_guess.dart    addan simge tahmini (diş → tooth, spor → gym …)
@@ -66,7 +72,9 @@ lib/
   screens/card_form_screen.dart     Yeni kart / Kartı düzenle (sıklık, simge)
   screens/late_screen.dart          Gecikenler (sağa kaydır = bugün yaptım)
   screens/profile_screen.dart       Profil + istatistikler
-  screens/settings_screen.dart      Ayarlar: sıralama, örnekler, yedek, silme, Hakkında
+  screens/settings_screen.dart      Ayarlar: sıralama, arşiv, paylaşılan kart, örnekler, yedek
+                                    (telefon yedeği bilgisi, CSV), silme, Hakkında
+  screens/archive_screen.dart       Arşiv: listeden kaldırılmış kartlar
   screens/legal_screen.dart         Gizlilik politikası / Kullanım koşulları (legal_text.dart'tan)
   legal/                            legal_model · legal_text (ÜRETİLİR) · font_licenses (OFL)
   app_info.dart                     appVersion (pubspec ile aynı; test kontrol eder)
@@ -77,7 +85,8 @@ lib/
                             app_sheet · record_sheet · draggable_card_grid
                             header (+ Avatar) · fab · bottom_tab_bar · app_snackbar
                             store_snack · timeline · empty_state · icons · ui
-                            confirm_destructive
+                            confirm_destructive · gap_chart (detayda "Aralıklar")
+                            · note_sheet (kayda not)
 test/  domain · storage · state · theme · widgets · screens
 store/  mağaza metinleri, gizlilik politikası, Play form cevapları, görseller (README)
 tool/create_upload_key.ps1   yükleme anahtarı + android/key.properties (git dışı)
@@ -115,8 +124,12 @@ Bunlar tasarımdan gelir; bilerek istenmedikçe dokunma (`domain/logic.dart`):
 damgası yemesini engeller. Kaldırma.
 
 Kalıcı olan kart verisi `{ id, name, recs }` + isteğe bağlı `icon`, `every`
-(gün), `created`, `notify` (yalnızca true iken yazılır). Üçü de kullanıcının girdisi, türetilmiş değil; bozuksa kart
-atılmaz, alan yok sayılır. `recs` mutlak ISO tarihleri (`YYYY-MM-DD`), en
+(gün), `created`, `notify` ve `archived` (yalnızca true iken yazılır), `notes`
+(`{tarih: metin}`, anahtar mutlaka `recs`'te olan bir gün — kayıt silinince/taşınınca
+not da gider/taşınır), `remindAt` (gece yarısından dakika; yoksa genel saat). Hepsi
+kullanıcının girdisi, türetilmiş değil; bozuksa kart atılmaz, alan yok sayılır.
+Arşivli kart `store.cards`'ta yoktur (ızgara, zaman tüneli, gecikenler, profil, widget,
+bildirim hepsi onu görmez); `archivedCards` ve `byId` görür. `recs` mutlak ISO tarihleri (`YYYY-MM-DD`), en
 yeniden eskiye. **Türetilmiş hiçbir değer saklanmaz.** Profil (`name`, `handle`)
 ayrı anahtarda (`nezaman.profile.v1`). Kart düzeni (ızgara/liste) `nezaman.layout.v1`;
 başlıktaki avatarın solundaki düğme değiştirir, seçim kalıcıdır. Kaydı olmayan kart asla geç sayılmaz.
