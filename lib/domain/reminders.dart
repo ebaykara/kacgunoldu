@@ -2,6 +2,7 @@ import 'card.dart';
 import 'date.dart';
 import 'frequency.dart';
 import 'logic.dart';
+import 'reminder_copy.dart';
 
 /// One notification to hand to the operating system.
 class Reminder {
@@ -75,9 +76,10 @@ List<Reminder> planReminders(
 
     final last = card.recs.first;
     final due = shiftDays(last, typical);
+    // Only a rhythm the user chose is worth naming; a learned one is noise.
     final goal = card.every != null
-        ? 'Hedefin ${frequencyLabel(card.every!).toLowerCase()}.'
-        : 'Genelde $typical günde bir yapıyorsun.';
+        ? ' Hedefin ${frequencyLabel(card.every!).toLowerCase()}.'
+        : '';
 
     var scheduled = false;
 
@@ -89,7 +91,7 @@ List<Reminder> planReminders(
         cardId: card.id,
         at: dueAt,
         title: card.name,
-        body: '$n gündür yapmadın, sırası geldi. $goal',
+        body: dueBody(card.name, n, seed: '${card.id}|$due|0') + goal,
       ));
       scheduled = true;
     }
@@ -102,8 +104,12 @@ List<Reminder> planReminders(
         cardId: card.id,
         at: followAt,
         title: card.name,
-        body: '${daysSince(last, followKey)} gün oldu, '
-            '$followUpAfterDays gün geçti. Yaptıysan dokun, işaretle.',
+        body: lateBody(
+          card.name,
+          daysSince(last, followKey),
+          followUpAfterDays,
+          seed: '${card.id}|$due|1',
+        ),
       ));
       scheduled = true;
     }
@@ -116,7 +122,7 @@ List<Reminder> planReminders(
         cardId: card.id,
         at: at(nudgeKey),
         title: card.name,
-        body: '$n gün oldu, ${n - typical} gün geçti. Yaptıysan dokun, işaretle.',
+        body: lateBody(card.name, n, n - typical, seed: '${card.id}|$nudgeKey|2'),
       ));
     }
   }

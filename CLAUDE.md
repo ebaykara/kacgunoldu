@@ -21,7 +21,7 @@ flutter analyze   # 0 uyarı olmalı
 ```
 
 ```bash
-flutter test      # 141 test, hepsi geçmeli
+flutter test      # 147 test, hepsi geçmeli
 ```
 
 ```bash
@@ -50,7 +50,8 @@ lib/
   domain/frequency.dart     "Ne sıklıkla" çipleri (Her gün … Yılda bir)
   domain/icon_guess.dart    addan simge tahmini (diş → tooth, spor → gym …)
   domain/insights.dart      profil sayıları: toplamlar, aylık, en düzenli, en ihmal
-  domain/reminders.dart     planReminders: hangi bildirim ne zaman, metinler (saf)
+  domain/reminders.dart     planReminders: hangi bildirim ne zaman (saf)
+  domain/reminder_copy.dart bildirim metinleri: konu KART ADINDAN (simgeden değil), konu başına şablonlar
   services/reminders.dart   Reminders arayüzü · LocalReminders (OS) · NoopReminders
   storage/seed.dart         örnek kartlar — YALNIZCA Ayarlar → "Örnek kartları ekle"
                             (ilk açılış boş başlar; mağaza sürümü uydurma veri açmaz)
@@ -139,9 +140,10 @@ Türkçe ve kesin. Değiştirmen istenmediyse aynen kalsın:
 - Kart detayı `gün oldu` · `Son kayıt` / `Ortalama` · `Bugün yaptım` ·
   `Başka bir gün seç` · `Geçmiş`
 - Gecikenler `{n} kartın zamanı geçti` · `Hemen kontrol et, tekrarını planla.`
-- Bildirim: başlık = kart adı. Vadesinde `{n} gündür yapmadın, sırası geldi.
-  Genelde {t} günde bir yapıyorsun.` (seçilmiş sıklıkta `Hedefin haftada bir.`),
-  2 gün sonra `{n} gün oldu, 2 gün geçti. Yaptıysan dokun, işaretle.` Form:
+- Bildirim: başlık = kart adı. Gövde `reminder_copy.dart`'taki şablonlardan: konu
+  kart adındaki kelime köklerinden bulunur (sağlık/ilaç önce, şakasız), vadede
+  ve gecikmede ayrı cümle; seçim kart+gün tohumuyla sabittir (yeniden planlama
+  metni değiştirmez). Seçilmiş sıklıkta sona ` Hedefin haftada bir.` eklenir. Form:
   `Bana hatırlat`. Ayarlar: `Hatırlatma saati` · `Test bildirimi gönder`
 - Boş durum `Hayatındaki küçük şeyleri takip etmeye başla.` · `İlk kartını oluştur`
 - Silme onayı `"{ad}" silinsin mi?` · `Vazgeç` / `Sil`

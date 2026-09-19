@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import '../domain/card.dart';
 import '../domain/date.dart';
 import '../domain/order.dart';
+import '../domain/reminder_copy.dart';
 import '../domain/reminders.dart';
 import '../domain/text.dart';
 import '../services/launch_theme.dart';
@@ -517,9 +518,14 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
     final sample = _cards.where((c) => c.notify).firstOrNull ?? _cards.firstOrNull;
+    final name = sample?.name ?? 'Saçımı kestirdim';
+    final days = sample == null || sample.recs.isEmpty
+        ? 30
+        : daysSince(sample.recs.first, todayKey(DateTime.now()));
+    // A different line each time, so the test shows what reminders read like.
     await _reminders.showNow(
-      sample?.name ?? 'Saçımı kestirdim',
-      '36 gündür yapmadın, sırası geldi. Genelde 36 günde bir yapıyorsun.',
+      name,
+      dueBody(name, days < 1 ? 1 : days, seed: '${DateTime.now().microsecondsSinceEpoch}'),
     );
   }
 }

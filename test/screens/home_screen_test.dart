@@ -451,7 +451,8 @@ void main() {
       final mine = fake.plan.where((r) => r.cardId == created.id).toList();
       expect(mine.length, 2);
       expect(mine.first.title, 'Anneme telefon ettim');
-      expect(mine.first.body, '7 gündür yapmadın, sırası geldi. Hedefin haftada bir.');
+      expect(mine.first.body, contains('7 gün'));
+      expect(mine.first.body, endsWith(' Hedefin haftada bir.'));
     }, reminders: fake);
   });
 
@@ -525,7 +526,7 @@ void main() {
 
       await tapText(tester, 'Test bildirimi gönder');
       expect(fake.shown.length, 1);
-      expect(fake.shown.first.$2, contains('sırası geldi'));
+      expect(fake.shown.first.$2, contains('11 gün'));
     }, reminders: fake);
   });
 

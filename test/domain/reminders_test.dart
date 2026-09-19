@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kac_gun_oldu/domain/card.dart';
 import 'package:kac_gun_oldu/domain/date.dart';
+import 'package:kac_gun_oldu/domain/reminder_copy.dart';
 import 'package:kac_gun_oldu/domain/reminders.dart';
 
 const today = '2026-09-18';
@@ -38,21 +39,26 @@ void main() {
       expect(plan.length, 2);
       expect(plan[0].at, DateTime(2026, 9, 20, 9));
       expect(plan[0].title, 'Bitkileri suladım');
+      // A plant line, with the day count; a learned rhythm is not named.
       expect(
         plan[0].body,
-        '4 gündür yapmadın, sırası geldi. Genelde 4 günde bir yapıyorsun.',
+        dueBody('Bitkileri suladım', 4, seed: 'Bitkileri suladım|2026-09-20|0'),
       );
+      expect(plan[0].body, contains('4 gün'));
+      expect(plan[0].body, isNot(contains('Hedefin')));
       expect(plan[1].at, DateTime(2026, 9, 22, 9));
       expect(
         plan[1].body,
-        '6 gün oldu, 2 gün geçti. Yaptıysan dokun, işaretle.',
+        lateBody('Bitkileri suladım', 6, 2, seed: 'Bitkileri suladım|2026-09-20|1'),
       );
+      expect(plan[1].body, anyOf(contains('6 gün'), contains('2 gün')));
     });
 
     test('a declared rhythm is named in the message and works on one record', () {
       final plan = planReminders([card('Saçımı kestirdim', [3], every: 30)], morning);
       expect(plan.first.at, DateTime(2026, 10, 15, 9));
-      expect(plan.first.body, '30 gündür yapmadın, sırası geldi. Hedefin ayda bir.');
+      expect(plan.first.body, contains('30 gün'));
+      expect(plan.first.body, endsWith(' Hedefin ayda bir.'));
     });
 
     test('honours the reminder time', () {
@@ -80,7 +86,8 @@ void main() {
       final plan = planReminders([card('Spor salonuna gittim', [11, 14, 18, 20, 23])], morning);
       expect(plan.length, 1);
       expect(plan.first.at, DateTime(2026, 9, 18, 9));
-      expect(plan.first.body, '11 gün oldu, 8 gün geçti. Yaptıysan dokun, işaretle.');
+      expect(plan.first.body, anyOf(contains('11 gün'), contains('8 gün')));
+      expect(linesFor(ReminderTopic.gym).any((l) => l.contains('{n}') || l.contains('{k}')), isTrue);
 
       // After 09:00 the nudge moves to tomorrow morning, with tomorrow's count.
       final evening = planReminders(
@@ -88,7 +95,7 @@ void main() {
         DateTime(2026, 9, 18, 21),
       );
       expect(evening.first.at, DateTime(2026, 9, 19, 9));
-      expect(evening.first.body, '12 gün oldu, 9 gün geçti. Yaptıysan dokun, işaretle.');
+      expect(evening.first.body, anyOf(contains('12 gün'), contains('9 gün')));
     });
 
     test('cards with no rhythm yet or no records are skipped', () {
@@ -109,6 +116,68 @@ void main() {
     test('formats the time of day', () {
       expect(timeLabel(9, 0), '09:00');
       expect(timeLabel(20, 5), '20:05');
+    });
+  });
+
+  group('reminder copy', () {
+    test('reads the topic from the card name, suffixes and all', () {
+      expect(topicOf('Saçımı kestirdim'), ReminderTopic.hair);
+      expect(topicOf('Berbere gittim'), ReminderTopic.hair);
+      expect(topicOf('Bitkileri suladım'), ReminderTopic.plant);
+      expect(topicOf('Çiçeklere su verdim'), ReminderTopic.plant);
+      expect(topicOf('Anneme telefon ettim'), ReminderTopic.family);
+      expect(topicOf('Babamı aradım'), ReminderTopic.family);
+      expect(topicOf('Spor salonuna gittim'), ReminderTopic.gym);
+      expect(topicOf('Çarşafları değiştirdim'), ReminderTopic.bed);
+      expect(topicOf('Arabanın yağını değiştirdim'), ReminderTopic.car);
+      expect(topicOf('Kediye mama aldım'), ReminderTopic.pet);
+      expect(topicOf('KİTAP OKUDUM'), ReminderTopic.book);
+      expect(topicOf('Elektrik faturasını ödedim'), ReminderTopic.bill);
+    });
+
+    test('the specific wins over the broad, health over everything', () {
+      expect(topicOf('Buzdolabını temizledim'), ReminderTopic.fridge);
+      expect(topicOf('Diş hekimine gittim'), ReminderTopic.doctor);
+      expect(topicOf('Vitamin aldım spor sonrası'), ReminderTopic.pill);
+      expect(topicOf('Lastik kontrolü'), ReminderTopic.car);
+    });
+
+    test('a stem only matches the start of a word, or the whole word', () {
+      expect(topicOf('Masumiyet müzesi'), ReminderTopic.general); // not "sula"
+      expect(topicOf('Yağmurda yürüdüm'), ReminderTopic.outdoor); // not "yağ"
+      expect(topicOf('Kiraz topladım'), ReminderTopic.general); // not "kira"
+      expect(topicOf('Aşırı yorgunum'), ReminderTopic.general); // not "aşı"
+      expect(topicOf('Okula gittim'), ReminderTopic.general); // not "oku"
+      expect(topicOf('Tencereyi yaktım'), ReminderTopic.general);
+    });
+
+    test('every topic has lines for both moments, and none is left unfilled', () {
+      for (final t in ReminderTopic.values) {
+        expect(linesFor(t), isNotEmpty, reason: '$t');
+      }
+      for (final seed in ['a', 'b', 'c', 'd', 'e']) {
+        for (final name in ['Saçımı kestirdim', 'Tencereyi yaktım', 'Vitamin aldım']) {
+          expect(dueBody(name, 5, seed: seed), isNot(contains('{')));
+          expect(lateBody(name, 7, 2, seed: seed), isNot(contains('{')));
+        }
+      }
+    });
+
+    test('the same card and day always get the same line', () {
+      expect(
+        dueBody('Saçımı kestirdim', 30, seed: 'x|2026-10-01|0'),
+        dueBody('Saçımı kestirdim', 30, seed: 'x|2026-10-01|0'),
+      );
+      final lines = {
+        for (var d = 1; d <= 20; d++) dueBody('Tencereyi yaktım', 5, seed: 'x|2026-10-$d|0'),
+      };
+      expect(lines.length, greaterThan(1));
+    });
+
+    test('health cards stay plain', () {
+      for (final l in [...linesFor(ReminderTopic.pill), ...linesFor(ReminderTopic.doctor)]) {
+        expect(l, isNot(contains('!')));
+      }
     });
   });
 
