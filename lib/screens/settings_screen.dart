@@ -124,6 +124,14 @@ class SettingsScreen extends StatelessWidget {
                 'kendiliğinden gelir; hatırlatmalar da yeniden kurulur.',
             'Yedeği telefonun ayarlarından açıp kapatabilirsin. Bu yedeği '
                 'Google ya da Apple tutar; biz göremeyiz.',
+            'Yedek günde bir kez, telefon şarjdayken ve Wi-Fi varken alınır; '
+                'bugünkü son kayıtların henüz yedekte olmayabilir.',
+            'Geri yükleme yalnızca uygulamayı kurarken olur; uygulama '
+                'kuruluyken yedeğe dönemezsin. Mağaza dışından kurulan '
+                'sürümlerde geri yükleme her telefonda çalışmayabilir.',
+            'Yedeği kapatmışsan hiçbir şey yedeklenmez. Bunun yerine '
+                'Ayarlar’daki “Yedeği panoya kopyala” ile verilerini elle '
+                'saklayabilirsin.',
           ])
             Padding(
               padding: const EdgeInsets.only(bottom: Space.s8),
