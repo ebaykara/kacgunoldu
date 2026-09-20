@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/widgets.dart';
 
 import '../domain/card.dart';
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'icons.dart';
@@ -44,13 +45,13 @@ class BottomTabBar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _TabItem(
-                  label: 'Kartlar',
+                  label: S.tabCards,
                   active: value == AppTab.cards,
                   onTap: () => onChange(AppTab.cards),
                   builder: (color, active) => GridIcon(color: color, active: active),
                 ),
                 _TabItem(
-                  label: 'Zaman tüneli',
+                  label: S.tabTimeline,
                   active: value == AppTab.time,
                   onTap: () => onChange(AppTab.time),
                   builder: (color, active) => TimelineIcon(color: color, active: active),

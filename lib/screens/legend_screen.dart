@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Card;
 
 import '../domain/card.dart';
 import '../domain/logic.dart';
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import '../widgets/card_glyph.dart';
@@ -12,43 +13,29 @@ import '../widgets/ui.dart';
 class LegendScreen extends StatelessWidget {
   const LegendScreen({super.key});
 
-  static const _rows = <(Tier, String, String, String, String, String, int)>[
-    (
-      Tier.fresh,
-      'Yeni',
-      'Yakın zamanda yaptın; her zamanki aralığın yarısı bile dolmadı.',
-      'Çarşafları değiştirdim',
-      'bed',
-      'yeni',
-      18,
-    ),
-    (
-      Tier.calm,
-      'Normal',
-      'Her şey yolunda, sırası henüz gelmedi.',
-      'Bitkileri suladım',
-      'plant',
-      '5 gün',
-      60,
-    ),
-    (
-      Tier.soon,
-      'Yaklaşıyor',
-      'Her zamanki aralık dolmak üzere ya da doldu.',
-      'Saçımı kestirdim',
-      'scissors',
-      'bugün',
-      100,
-    ),
-    (
-      Tier.late,
-      'Gecikti',
-      'Her zamanki aralığı belirgin şekilde aştı.',
-      'Spor salonuna gittim',
-      'gym',
-      '+8 gün',
-      100,
-    ),
+  /// The glyph, ring label and fill per tier; the words beside them come
+  /// from [Strings.legendRows], in the same order.
+  static const _shape = <(Tier, String, int)>[
+    (Tier.fresh, 'bed', 18),
+    (Tier.calm, 'plant', 60),
+    (Tier.soon, 'scissors', 100),
+    (Tier.late, 'gym', 100),
+  ];
+
+  static List<String> get _ringLabels =>
+      [S.ringNew, S.ringDays(5), S.ringToday, S.ringOver(8)];
+
+  List<(Tier, String, String, String, String, String, int)> get _rows => [
+    for (var i = 0; i < _shape.length; i++)
+      (
+        _shape[i].$1,
+        S.legendRows[i].$1,
+        S.legendRows[i].$2,
+        S.legendRows[i].$3,
+        _shape[i].$2,
+        _ringLabels[i],
+        _shape[i].$3,
+      ),
   ];
 
   @override
@@ -57,7 +44,7 @@ class LegendScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const PageHeader(title: 'Durum renkleri'),
+        PageHeader(title: S.legendTitle),
         Expanded(
           child: ListView(
             padding: EdgeInsets.fromLTRB(
@@ -68,7 +55,7 @@ class LegendScreen extends StatelessWidget {
             ),
             children: [
               Text(
-                'Kartın rengi, durumunu anlatır.',
+                S.legendLead,
                 style: display(24, color: AppColor.onSurface, height: 1.16),
               ),
               const SizedBox(height: Space.s16),
@@ -91,7 +78,7 @@ class LegendScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Halka ne gösterir?',
+                      S.ringSectionTitle,
                       style: ui(
                         14,
                         weight: FontWeight.w700,
@@ -100,10 +87,7 @@ class LegendScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: Space.s8),
                     Text(
-                      'Halka, bir sonraki sefere ne kadar kaldığını gösterir. '
-                      '“4 gün” dört gün kaldı, “bugün” sırası bugün, “+8 gün” her zamanki '
-                      'aralığı sekiz gün aştı demek. “yeni” ise ritim henüz öğrenilmedi demek — '
-                      'üç kayıttan sonra ya da bir sıklık seçince öğrenilir.',
+                      S.ringSectionBody,
                       style: ui(
                         13,
                         color: AppColor.onSurfaceVariant,

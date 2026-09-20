@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Card;
 
 import '../domain/text.dart';
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'ui.dart';
@@ -48,7 +49,7 @@ class _NoteSheetState extends State<NoteSheet> {
         ),
         const SizedBox(height: Space.s6),
         Text(
-          widget.initial.isEmpty ? 'Not ekle' : 'Notu düzenle',
+          widget.initial.isEmpty ? S.addNote : S.editNote,
           style: display(26, color: AppColor.onSurface, height: 1.14),
         ),
         const SizedBox(height: Space.s16),
@@ -71,7 +72,7 @@ class _NoteSheetState extends State<NoteSheet> {
             decoration: InputDecoration(
               border: InputBorder.none,
               counterText: '',
-              hintText: 'Örn. 45.200 km, dolgu yapıldı',
+              hintText: S.notePlaceholder,
               hintStyle: ui(
                 15,
                 weight: FontWeight.w500,
@@ -82,7 +83,7 @@ class _NoteSheetState extends State<NoteSheet> {
         ),
         const SizedBox(height: Space.s18),
         PrimaryButton(
-          label: 'Kaydet',
+          label: S.save,
           onTap: () => widget.onSave(_controller.text),
         ),
       ],

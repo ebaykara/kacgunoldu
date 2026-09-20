@@ -10,6 +10,7 @@ import '../domain/reminder_copy.dart';
 import '../domain/reminders.dart';
 import '../domain/share.dart';
 import '../domain/text.dart';
+import '../l10n/strings.dart';
 import '../services/home_widgets.dart';
 import '../services/launch_theme.dart';
 import '../services/reminders.dart';
@@ -140,11 +141,13 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
       _repository.loadReminderTime(),
       _repository.loadLayout(),
       _repository.loadWidgetDoneButton(),
+      _repository.loadLangId(),
     ]);
     _cards = results[0] as List<Card>;
     _manualOrder = results[1] as List<String>?;
     _profile = results[2] as Profile;
     AppColor.current = paletteById(results[3] as String?);
+    applyLang(AppLang.fromId(results[7] as String?));
     unawaited(applyLaunchTheme(AppColor.current.id));
     _layout = results[5] as CardLayout;
     _widgetDoneButton = results[6] as bool;
@@ -160,7 +163,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     // are handed a snapshot that doesn't have them yet.
     await _takeWidgetMarks();
     _syncWidgets();
-    _pinnedSub = _homeWidgets.pinned.listen((_) => toast('Widget ana ekrana eklendi'));
+    _pinnedSub = _homeWidgets.pinned.listen((_) => toast(S.widgetPinned));
     unawaited(_homeWidgets.canPin().then((can) {
       if (_disposed || can == _canPinWidget) return;
       _canPinWidget = can;
@@ -199,6 +202,20 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     _pinnedSub?.cancel();
     openCardRequest.dispose();
     super.dispose();
+  }
+
+  /// The phone's language changed while the app was open. Only matters
+  /// under [AppLang.system]; a chosen language wins over it.
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    if (appLang != AppLang.system) return;
+    final before = resolvedLang;
+    applyLang(AppLang.system, device: locales?.firstOrNull);
+    if (resolvedLang == before) return;
+    _syncWidgets();
+    _syncReminders();
+    notifyListeners();
+    _rebuildEverything();
   }
 
   @override
@@ -289,7 +306,10 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     final key = shiftDays(_today, -offset);
     _undoData = card;
     _recordPulse = RecordPulse(card.id, DateTime.now().microsecondsSinceEpoch);
-    _showSnack(Snack(message: '${card.name} · ${relativeLabel(offset)}', undoable: true));
+    _showSnack(Snack(
+      message: S.recordedSnack(card.name, relativeLabel(offset)),
+      undoable: true,
+    ));
     _commit([
       for (final c in _cards)
         if (c.id == card.id) c.copyWith(recs: _insertRecord(c.recs, key)) else c,
@@ -339,7 +359,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
       remindAt: remindAt,
     );
     _undoData = null;
-    _showSnack(Snack(message: '“$name” eklendi', undoable: false));
+    _showSnack(Snack(message: S.cardAdded(name), undoable: false));
     _commit([card, ..._cards]);
     return card.id;
   }
@@ -359,7 +379,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
       _manualOrder = next;
       unawaited(_repository.saveManualOrder(next));
     }
-    _showSnack(Snack(message: '“${card.name}” silindi', undoable: false));
+    _showSnack(Snack(message: S.cardDeleted(card.name), undoable: false));
     _commit(_cards.where((c) => c.id != cardId).toList());
   }
 
@@ -380,7 +400,10 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     if (card == null || !card.recs.contains(key)) return;
     _undoData = card;
     _recordPulse = null;
-    _showSnack(Snack(message: '${formatDayMonth(key, _today)} kaydı silindi', undoable: true));
+    _showSnack(Snack(
+      message: S.recordDeleted(formatDayMonth(key, _today)),
+      undoable: true,
+    ));
     _commit([
       for (final c in _cards)
         if (c.id == card.id)
@@ -399,7 +422,10 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     if (card == null || from == to || !card.recs.contains(from)) return;
     _undoData = card;
     _recordPulse = null;
-    _showSnack(Snack(message: 'Kayıt ${formatDayMonth(to, _today)} olarak güncellendi', undoable: true));
+    _showSnack(Snack(
+      message: S.recordMoved(formatDayMonth(to, _today)),
+      undoable: true,
+    ));
     // The note travels with its record; a day that already had its own note
     // keeps that one.
     final notes = {...card.notes}..remove(from);
@@ -424,7 +450,10 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     final trimmed = text.trim();
     if ((card.notes[key] ?? '') == trimmed) return;
     _undoData = null;
-    _showSnack(Snack(message: trimmed.isEmpty ? 'Not silindi' : 'Not kaydedildi', undoable: false));
+    _showSnack(Snack(
+      message: trimmed.isEmpty ? S.noteDeleted : S.noteSaved,
+      undoable: false,
+    ));
     final notes = {...card.notes};
     if (trimmed.isEmpty) {
       notes.remove(key);
@@ -445,7 +474,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     _undoData = null;
     _recordPulse = null;
     _showSnack(Snack(
-      message: archived ? '“${card.name}” arşivlendi' : '“${card.name}” arşivden çıktı',
+      message: archived ? S.cardArchived(card.name) : S.cardUnarchived(card.name),
       undoable: false,
     ));
     _commit([
@@ -463,7 +492,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
         c.recs.length == shared.recs.length &&
         c.recs.indexed.every((e) => shared.recs[e.$1] == e.$2));
     if (exists) {
-      toast('“${shared.name}” zaten kartların arasında');
+      toast(S.cardAlreadyThere(shared.name));
       return null;
     }
     final card = shared.copyWith(
@@ -475,7 +504,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
       clearRemindAt: true,
     );
     _undoData = null;
-    _showSnack(Snack(message: '“${card.name}” eklendi', undoable: false));
+    _showSnack(Snack(message: S.cardAdded(card.name), undoable: false));
     _commit([card, ..._cards]);
     return card.id;
   }
@@ -505,7 +534,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     final trimmed = name.trim();
     if (card == null || trimmed.isEmpty) return;
     _undoData = null;
-    _showSnack(const Snack(message: 'Kart güncellendi', undoable: false));
+    _showSnack(Snack(message: S.cardUpdated, undoable: false));
     _commit([
       for (final c in _cards)
         if (c.id == cardId)
@@ -528,8 +557,27 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   void resetOrder() {
     _manualOrder = null;
     unawaited(_repository.clearManualOrder());
-    _showSnack(const Snack(message: 'Kartlar aciliyete göre sıralandı', undoable: false));
+    _showSnack(Snack(message: S.orderReset, undoable: false));
     notifyListeners();
+  }
+
+  /// The interface language the person picked; [AppLang.system] follows the
+  /// phone.
+  AppLang get lang => appLang;
+
+  /// Switch the interface language everywhere, at once, and remember it.
+  ///
+  /// Reminder bodies and the home screen widgets carry their own copies of
+  /// the text, so both are rebuilt straight away rather than waiting for the
+  /// next card change.
+  void setLang(AppLang next) {
+    if (next == appLang) return;
+    applyLang(next);
+    unawaited(_repository.saveLangId(next.id));
+    _syncWidgets();
+    _syncReminders();
+    notifyListeners();
+    _rebuildEverything();
   }
 
   /// The active colour theme's id.
@@ -545,10 +593,14 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     applySystemBars();
     _syncWidgets();
     notifyListeners();
-    // Colours are read straight from [AppColor], not inherited, so nothing
-    // rebuilds by itself — including pages further down the navigator stack.
-    // Mark every element dirty once; the next frame repaints in the new
-    // theme.
+    _rebuildEverything();
+  }
+
+  /// Colours and strings are read straight from [AppColor] and [S], not
+  /// inherited, so nothing rebuilds by itself — including pages further down
+  /// the navigator stack. Mark every element dirty once; the next frame
+  /// repaints in the new theme and language.
+  void _rebuildEverything() {
     void visit(Element e) {
       e.markNeedsBuild();
       e.visitChildren(visit);
@@ -569,7 +621,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     _recordPulse = null;
     _manualOrder = null;
     unawaited(_repository.clearManualOrder());
-    _showSnack(const Snack(message: 'Bütün kartlar silindi', undoable: false));
+    _showSnack(Snack(message: S.allCardsDeleted, undoable: false));
     _commit(const []);
   }
 
@@ -579,7 +631,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     final missing = seedCards(_today).where((c) => !have.contains(c.id)).toList();
     if (missing.isEmpty) return 0;
     _undoData = null;
-    _showSnack(Snack(message: '${missing.length} örnek kart eklendi', undoable: false));
+    _showSnack(Snack(message: S.samplesAdded(missing.length), undoable: false));
     _commit([..._cards, ...missing]);
     return missing.length;
   }
@@ -627,7 +679,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     }
     _undoData = null;
     _recordPulse = null;
-    _showSnack(Snack(message: '${cards.length} kart geri yüklendi', undoable: false));
+    _showSnack(Snack(message: S.cardsRestored(cards.length), undoable: false));
     _commit(cards);
     return cards.length;
   }
@@ -706,8 +758,8 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     _undoData = null;
     _showSnack(Snack(
       message: names.length == 1
-          ? "${names.single} · widget'tan kaydedildi"
-          : "${names.length} kayıt widget'tan eklendi",
+          ? S.widgetMarkedOne(names.single)
+          : S.widgetMarkedMany(names.length),
       undoable: false,
     ));
     _commit(next);
@@ -722,7 +774,7 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
     final card = byId(cardId);
     if (card == null) return false;
     if (on && !await requestReminderPermission()) {
-      toast('Bildirim izni kapalı. Telefon ayarlarından açabilirsin.');
+      toast(S.notifyPermissionOff);
       return false;
     }
     _commit([
@@ -744,11 +796,11 @@ class CardStore extends ChangeNotifier with WidgetsBindingObserver {
   /// Shows a sample notification right now, in the real format.
   Future<void> sendTestReminder() async {
     if (!await requestReminderPermission()) {
-      toast('Bildirim izni kapalı. Telefon ayarlarından açabilirsin.');
+      toast(S.notifyPermissionOff);
       return;
     }
     final sample = _cards.where((c) => c.notify && !c.archived).firstOrNull ?? _cards.firstOrNull;
-    final name = sample?.name ?? 'Saçımı kestirdim';
+    final name = sample?.name ?? S.sampleCardName;
     final days = sample == null || sample.recs.isEmpty
         ? 30
         : daysSince(sample.recs.first, todayKey(DateTime.now()));

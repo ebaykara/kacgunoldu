@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Card;
 
+import '../l10n/strings.dart';
 import '../legal/legal_model.dart';
 import '../legal/legal_text.dart';
 import '../theme/tokens.dart';
@@ -30,7 +31,7 @@ class LegalScreen extends StatelessWidget {
             ),
             children: [
               Text(
-                'Son güncelleme: ${doc.updated}',
+                S.lastUpdated(doc.updated),
                 style: ui(
                   12,
                   weight: FontWeight.w600,
@@ -122,7 +123,7 @@ class _Block extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Kaç Gün Oldu? · EMA Labs',
+                  S.legalContactTitle,
                   style: ui(
                     14,
                     weight: FontWeight.w700,
@@ -181,8 +182,16 @@ class _Rich extends StatelessWidget {
   }
 }
 
-void openPrivacy(BuildContext context) =>
-    pushPage<void>(context, (_) => const LegalScreen(doc: privacyPolicy));
+/// Both languages are generated into `legal_text.dart`; the interface
+/// language picks which one opens.
+void openPrivacy(BuildContext context) => pushPage<void>(
+  context,
+  (_) => LegalScreen(
+    doc: S.lang == AppLang.en ? privacyPolicyEn : privacyPolicy,
+  ),
+);
 
-void openTerms(BuildContext context) =>
-    pushPage<void>(context, (_) => const LegalScreen(doc: termsOfUse));
+void openTerms(BuildContext context) => pushPage<void>(
+  context,
+  (_) => LegalScreen(doc: S.lang == AppLang.en ? termsOfUseEn : termsOfUse),
+);

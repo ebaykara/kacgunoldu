@@ -108,12 +108,13 @@ class CardWidget : AppWidgetProvider() {
             val v = RemoteViews(context.packageName, R.layout.widget_card)
             if (snapshot == null || card == null) {
                 val theme = snapshot?.theme ?: ThemeColors.DEFAULT
+                val strings = snapshot?.strings ?: WidgetStrings.DEFAULT
                 v.tint(R.id.bg, theme.surface)
                 v.setViewVisibility(R.id.content, View.GONE)
                 v.setViewVisibility(R.id.empty, View.VISIBLE)
                 v.setTextViewText(
                     R.id.empty_text,
-                    context.getString(if (snapshot == null) R.string.widget_open_app else R.string.widget_first_card),
+                    if (snapshot == null) strings.openApp else strings.firstCard,
                 )
                 v.setTextColor(R.id.empty_text, theme.onSurface)
                 v.setInt(R.id.empty_glyph, "setColorFilter", theme.primary)

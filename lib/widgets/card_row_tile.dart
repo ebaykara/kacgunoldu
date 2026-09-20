@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../domain/card.dart' show Tier;
 import '../domain/logic.dart';
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'card_glyph.dart';
@@ -57,9 +58,8 @@ class _CardRowTileState extends State<CardRowTile> {
 
     return Semantics(
       button: true,
-      label: '${card.name}, ${stats.days} gün önce'
-          '${stats.isLate ? ', geç' : ''}. ${stats.ringHint}',
-      hint: 'ayrıntılar için dokun, yer değiştirmek için basılı tutup sürükle',
+      label: S.cardSemantics(card.name, stats.days, stats.isLate, stats.ringHint),
+      hint: S.hintOpenCardDrag,
       child: GestureDetector(
         onTap: widget.onTap,
         onTapDown: (_) => setState(() => _pressed = true),
@@ -153,7 +153,7 @@ class _CardRowTileState extends State<CardRowTile> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                hasRecs ? 'gün oldu' : 'kayıt yok',
+                                hasRecs ? S.unitDaysSince : S.unitNoRecord,
                                 maxLines: 1,
                                 softWrap: false,
                                 style: ui(11, weight: FontWeight.w600, color: ink.withValues(alpha: 0.6)),

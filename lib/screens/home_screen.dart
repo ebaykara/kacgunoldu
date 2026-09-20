@@ -6,6 +6,7 @@ import '../domain/filter.dart';
 import '../domain/logic.dart';
 import '../domain/order.dart';
 import '../domain/text.dart';
+import '../l10n/strings.dart';
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
@@ -107,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final n = widget.store.archivedCards.length;
     if (n == 0) return const SizedBox.shrink();
     return QuietButton(
-      label: 'Arşiv ($n)',
+      label: S.archiveLink(n),
       icon: Icons.archive_outlined,
       onTap: _openArchive,
     );
@@ -217,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Padding(
                               padding: const EdgeInsets.all(Space.s22),
                               child: Text(
-                                'Eşleşen kart yok.',
+                                S.noMatchingCards,
                                 textAlign: TextAlign.center,
                                 style: ui(
                                   13.5,
@@ -322,7 +323,7 @@ class _TimelineTab extends StatelessWidget {
     String? month;
     for (final e in entries) {
       final d = fromDateKey(e.dateKey);
-      final label = '${months[d.month - 1]} ${d.year}';
+      final label = S.monthYear(d.month, d.year);
       if (label != month) {
         items.add(label);
         month = label;
@@ -346,7 +347,7 @@ class _TimelineTab extends StatelessWidget {
                 child: Semantics(
                   header: true,
                   child: Text(
-                    'Zaman tüneli',
+                    S.tabTimeline,
                     style: display(
                       37,
                       color: AppColor.onSurface,
@@ -374,10 +375,10 @@ class _TimelineTab extends StatelessWidget {
                     padding: const EdgeInsets.all(Space.s22),
                     child: Text(
                       range == TimelineRange.all
-                          ? 'Henüz hiç kayıt yok.'
+                          ? S.timelineEmptyAll
                           : range == TimelineRange.week
-                          ? 'Son bir haftada kayıt yok.'
-                          : 'Son bir ayda kayıt yok.',
+                          ? S.timelineEmptyWeek
+                          : S.timelineEmptyMonth,
                       textAlign: TextAlign.center,
                       style: ui(13.5, color: AppColor.onSurfaceVariant),
                     ),
@@ -457,7 +458,7 @@ class _FilterBar extends StatelessWidget {
                       decoration: InputDecoration(
                         isDense: true,
                         border: InputBorder.none,
-                        hintText: 'Kartlarda ara',
+                        hintText: S.searchCards,
                         hintStyle: ui(
                           14,
                           weight: FontWeight.w500,
@@ -470,7 +471,7 @@ class _FilterBar extends StatelessWidget {
                 if (controller.text.isNotEmpty)
                   RoundIconButton(
                     icon: Icons.close_rounded,
-                    label: 'Aramayı temizle',
+                    label: S.clearSearch,
                     onTap: () {
                       controller.clear();
                       onQuery();

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' show Color;
 
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import 'card.dart';
 import 'date.dart';
@@ -154,11 +155,11 @@ CardStats statsFor(Card card, DateKey today) {
   // splitting across a wrap (the Text itself is also capped at one line).
   final lastKey = card.recs.isNotEmpty ? card.recs[0] : null;
   final meta = lastKey == null
-      ? 'Henüz işaretlenmedi'
+      ? S.notMarkedYet
       : days == 0
-          ? 'Bugün yapıldı'
+          ? S.doneTodayMeta
           : typical != null
-              ? '${formatDayMonth(lastKey, today)} ~$typical günde bir'
+              ? S.metaEvery(formatDayMonth(lastKey, today), typical)
               : formatDayMonth(lastKey, today);
 
   // The ring answers one question: how long until this is due again?
@@ -170,19 +171,19 @@ CardStats statsFor(Card card, DateKey today) {
   final remaining =
       typical == null || card.recs.isEmpty ? null : typical - days;
   final ringLabel = remaining == null
-      ? 'yeni'
+      ? S.ringNew
       : remaining > 0
-          ? '$remaining gün'
+          ? S.ringDays(remaining)
           : remaining == 0
-              ? 'bugün'
-              : '+${-remaining} gün';
+              ? S.ringToday
+              : S.ringOver(-remaining);
   final ringHint = remaining == null
-      ? 'ritmi henüz öğrenilmedi'
+      ? S.ringHintNew
       : remaining > 0
-          ? 'her zamanki aralığa $remaining gün kaldı'
+          ? S.ringHintLeft(remaining)
           : remaining == 0
-              ? 'her zamanki aralık bugün doluyor'
-              : 'her zamanki aralığı ${-remaining} gün aştı';
+              ? S.ringHintDueToday
+              : S.ringHintOver(-remaining);
 
   return CardStats(
     days: days,

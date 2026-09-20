@@ -7,6 +7,7 @@ import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../domain/reminders.dart';
+import '../l10n/strings.dart';
 
 /// The operating system's side of reminders. [CardStore] talks to this
 /// interface only, so tests run against [NoopReminders] and never touch a
@@ -60,17 +61,20 @@ class LocalReminders implements Reminders {
   @override
   Stream<String> get taps => _taps.stream;
 
-  static const _details = NotificationDetails(
+  /// Built per call rather than held as a constant: the channel's name and
+  /// description follow the interface language, and Android picks the new
+  /// wording up the next time the channel is created.
+  static NotificationDetails get _details => NotificationDetails(
     android: AndroidNotificationDetails(
       _channelId,
-      'Hatırlatmalar',
-      channelDescription: 'Bir kartın sırası geldiğinde haber verir.',
+      S.notificationChannelName,
+      channelDescription: S.notificationChannelDescription,
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
       icon: 'ic_notification',
-      styleInformation: BigTextStyleInformation(''),
+      styleInformation: const BigTextStyleInformation(''),
     ),
-    iOS: DarwinNotificationDetails(),
+    iOS: const DarwinNotificationDetails(),
   );
 
   @override

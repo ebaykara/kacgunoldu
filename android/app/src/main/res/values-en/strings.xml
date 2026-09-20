@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  English for the surfaces the OS draws or launches itself: the widget picker
+  and the "which card?" configuration screen. These follow the PHONE's
+  language, not the in-app one — the picker is shown before the app has any
+  say. Everything the widgets draw themselves comes from the snapshot the app
+  publishes (WidgetStrings), so it follows Ayarlar → Dil.
+-->
+<resources>
+    <string name="widget_card_label">Card</string>
+    <string name="widget_card_description">Shows how many days it has been for one card.</string>
+    <string name="widget_list_label">Cards</string>
+    <string name="widget_list_description">The cards due soonest, together.</string>
+    <string name="widget_title">How many days?</string>
+    <string name="widget_late">%1$d cards overdue</string>
+    <string name="widget_first_card">Create your first card</string>
+    <string name="widget_open_app">Open the app to see your cards</string>
+    <string name="widget_config_title">Which card?</string>
+    <string name="widget_config_hint">The widget will show how many days it has been for this card.</string>
+    <string name="widget_config_auto">The most urgent card</string>
+    <string name="widget_config_auto_hint">Shows whichever is due soonest, each day</string>
+</resources>

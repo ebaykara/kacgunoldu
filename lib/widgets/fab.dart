@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'icons.dart';
@@ -25,7 +26,7 @@ class _FabState extends State<Fab> {
       bottom: widget.bottom,
       child: Semantics(
         button: true,
-        label: 'Yeni kart',
+        label: S.newCard,
         child: GestureDetector(
           onTap: widget.onTap,
           onTapDown: (_) => setState(() => _pressed = true),
@@ -51,7 +52,7 @@ class _FabState extends State<Fab> {
                   PlusIcon(color: AppColor.onPrimary),
                   const SizedBox(width: Space.s8),
                   Text(
-                    'Yeni kart',
+                    S.newCard,
                     style: ui(14, weight: FontWeight.w600, color: AppColor.onPrimary),
                   ),
                 ],

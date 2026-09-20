@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:flutter/services.dart' show HapticFeedback;
 
 import '../domain/card.dart' show Tier;
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'card_glyph.dart';
@@ -104,7 +105,7 @@ class PageHeader extends StatelessWidget {
           children: [
             RoundIconButton(
               icon: Icons.arrow_back_rounded,
-              label: 'Geri',
+              label: S.back,
               onTap: onBack ?? () => Navigator.of(context).maybePop(),
             ),
             Expanded(

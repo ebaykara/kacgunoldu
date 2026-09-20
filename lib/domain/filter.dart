@@ -1,3 +1,4 @@
+import '../l10n/strings.dart';
 import 'card.dart';
 import 'logic.dart';
 import 'text.dart';
@@ -6,10 +7,10 @@ import 'text.dart';
 /// comes due soon.
 enum CardFilter { all, late, soon }
 
-const cardFilterLabels = {
-  CardFilter.all: 'Tümü',
-  CardFilter.late: 'Gecikenler',
-  CardFilter.soon: 'Sırası yakın',
+Map<CardFilter, String> get cardFilterLabels => {
+  CardFilter.all: S.filterAll,
+  CardFilter.late: S.filterLate,
+  CardFilter.soon: S.filterSoon,
 };
 
 /// Show the search and filter bar from this many cards on; below it the whole
@@ -24,11 +25,14 @@ List<DecoratedCard> filterCards(
   CardFilter filter,
   String query,
 ) {
-  final q = lowerTr(query.trim());
+  final needles = foldedForms(query.trim());
+  bool hit(String text) {
+    final forms = foldedForms(text);
+    return needles.any((q) => forms.any((f) => f.contains(q)));
+  }
+
   bool matches(Card c) =>
-      q.isEmpty ||
-      lowerTr(c.name).contains(q) ||
-      c.notes.values.any((n) => lowerTr(n).contains(q));
+      query.trim().isEmpty || hit(c.name) || c.notes.values.any(hit);
   return [
     for (final c in cards)
       if (switch (filter) {

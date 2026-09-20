@@ -65,8 +65,10 @@ class CardListWidget : AppWidgetProvider() {
             rings: HashMap<String, Bitmap>,
         ): RemoteViews {
             val theme = snapshot?.theme ?: ThemeColors.DEFAULT
+            val strings = snapshot?.strings ?: WidgetStrings.DEFAULT
             val v = RemoteViews(context.packageName, R.layout.widget_list)
             v.tint(R.id.bg, theme.surface)
+            v.setTextViewText(R.id.title, strings.title)
             v.setTextColor(R.id.title, theme.onSurface)
             v.setOnClickPendingIntent(R.id.header, WidgetViews.openApp(context, null))
 
@@ -74,7 +76,7 @@ class CardListWidget : AppWidgetProvider() {
             v.setViewVisibility(R.id.badge, if (late > 0) View.VISIBLE else View.GONE)
             if (late > 0) {
                 v.tint(R.id.badge_bg, theme.primary)
-                v.setTextViewText(R.id.badge_text, context.getString(R.string.widget_late, late))
+                v.setTextViewText(R.id.badge_text, strings.late(late))
                 v.setTextColor(R.id.badge_text, theme.onPrimary)
             }
 
@@ -83,10 +85,7 @@ class CardListWidget : AppWidgetProvider() {
             if (cards.isEmpty()) {
                 v.setViewVisibility(R.id.rows, View.GONE)
                 v.setViewVisibility(R.id.empty, View.VISIBLE)
-                v.setTextViewText(
-                    R.id.empty_text,
-                    context.getString(if (snapshot == null) R.string.widget_open_app else R.string.widget_first_card),
-                )
+                v.setTextViewText(R.id.empty_text, if (snapshot == null) strings.openApp else strings.firstCard)
                 v.setTextColor(R.id.empty_text, theme.muted)
                 v.setInt(R.id.empty_glyph, "setColorFilter", theme.primary)
                 v.setOnClickPendingIntent(R.id.empty, WidgetViews.openApp(context, null))

@@ -144,3 +144,142 @@ const termsOfUse = LegalDoc(
   ],
 );
 
+const privacyPolicyEn = LegalDoc(
+  title: 'Privacy Policy',
+  updated: '20 September 2026',
+  lead: '**The cards and records you enter are never collected, never sent to a server and never shared.** They stay on your own device. The app has no account, ads, analytics or tracking.',
+  sections: [
+    LegalSection('Overview', [
+      LegalBlock.p('This privacy policy explains how **Kaç Gün Oldu?** (“the App”) handles information. The App is a fully offline tool for keeping track of when you last did something.'),
+      LegalBlock.p('You don\'t need to create an account, sign in or provide any personal information. The App makes no network connections.'),
+    ]),
+    LegalSection('Data We Collect', [
+      LegalBlock.p('**No personal data is collected.** In particular:'),
+      LegalBlock.list([
+        'No identity information such as name, email address or phone number',
+        'No location, contacts, photos, calendar, microphone or camera data',
+        'Your cards and record dates are never sent to the developer or anyone else',
+        'No advertising ID, analytics or crash reports of any kind',
+      ]),
+    ]),
+    LegalSection('What Is Stored On Your Device', [
+      LegalBlock.p('What you enter is stored **only on your own device**, in the protected storage area the operating system gives the App. Other apps on your device cannot access it:'),
+      LegalBlock.list([
+        'The cards you create: name, icon, the frequency you choose, your reminder preference and time, and whether a card is archived',
+        'The dates you mark on each card and any notes you write on them',
+        'Optionally, a name and username (shown only on the profile screen)',
+        'Your preferences: colour theme, card layout (grid or list), reminder time',
+      ]),
+      LegalBlock.p('Nobody, including the developer, can access this information.'),
+    ]),
+    LegalSection('Backups', [
+      LegalBlock.p('The App does not back anything up to any cloud by itself. However, if your operating system\'s own backup is on (Google account backup on Android; iCloud and computer backups on iOS), the App\'s data may be included in it. That backup is managed by Google or Apple under your account and is not accessible to the developer.'),
+      LegalBlock.p('You can also use **Settings → Yedeği panoya kopyala** to copy your data as text, and **Panodaki yedeği geri yükle** to import it on another device. That backup is unencrypted plain text; where you paste it is up to you.'),
+    ]),
+    LegalSection('Clipboard', [
+      LegalBlock.p('The App accesses the clipboard only when you tap “copy backup”, “restore backup” or “add a shared card”. It never reads your clipboard at any other time. Some versions of Android and iOS notify you when an app accesses the clipboard; that is expected.'),
+    ]),
+    LegalSection('Sharing And Exporting', [
+      LegalBlock.p('When you send a card with **Share**, the card\'s name, icon, frequency, dates and notes are written into a link and sent with the app you pick in your phone\'s share menu. **Settings → CSV olarak dışa aktar** hands all your records to the same menu as a file. In both cases the data never passes through a server of ours; you choose where it goes and to whom, and from then on it is subject to the rules of the app you chose.'),
+      LegalBlock.p('When you add a card someone sent you, a copy of it is saved on your device only. Cards are not synced afterwards.'),
+    ]),
+    LegalSection('Reminders', [
+      LegalBlock.p('When you turn on “Bana hatırlat” for a card, a notification is shown at your chosen time when the card is due. Notifications are scheduled entirely **on your device**: the time and text are handed to the operating system\'s own notification service and are never sent to any server. The App uses no push infrastructure and creates no notification tokens.'),
+      LegalBlock.p('The notification shows the card\'s name, so it may be readable on the lock screen. You may prefer to leave reminders off for a sensitive card name.'),
+      LegalBlock.p('Notifications need the operating system\'s permission. It is requested when you turn on your first reminder, not when you first open the App, and you can withdraw it any time in your phone\'s settings; if you don\'t grant it, the rest of the App works as usual. On Android, reminders are scheduled without needing the exact-alarm permission, so a notification may arrive a few minutes after its target time.'),
+    ]),
+    LegalSection('Third-Party Services', [
+      LegalBlock.p('The App contains no ad network, analytics tool, crash reporter, social media component or any third-party software development kit (SDK) that collects user data. The typefaces used are bundled inside the App; nothing is downloaded.'),
+      LegalBlock.p('The store you download the App from (Google Play or the Apple App Store) may process information about the download under its own privacy policy; that is outside the App.'),
+    ]),
+    LegalSection('Permissions', [
+      LegalBlock.p('The App does not ask for camera, microphone, location, contacts, calendar or photos permission, and does not use the internet permission.'),
+      LegalBlock.list([
+        '**Notifications:** requested only when you set up a reminder',
+        '**Run at startup (Android):** so scheduled reminders can be set up again after the phone restarts',
+        '**Vibration (Android):** when a notification arrives',
+      ]),
+    ]),
+    LegalSection('Deleting Your Data', [
+      LegalBlock.p('All of your data is under your control. You can delete cards and records one by one in the App, or remove everything at once with **Settings → Bütün kartları sil**. Uninstalling the App also deletes all of its local data.'),
+      LegalBlock.p('Because the developer holds no data about you, there is no need to send a deletion request. If your operating system\'s cloud backup is on, the copy in that backup can be deleted separately from your Google or Apple account.'),
+    ]),
+    LegalSection('Security', [
+      LegalBlock.p('Your data is protected by the operating system\'s app sandbox. The App does not additionally encrypt it; security depends on your device\'s screen lock and encryption settings. We recommend using a screen lock.'),
+    ]),
+    LegalSection('Children\'s Privacy', [
+      LegalBlock.p('The App is not marketed to children. It collects personal data from no one, children included.'),
+    ]),
+    LegalSection('Your Legal Rights', [
+      LegalBlock.p('Under Turkish KVKK (Law No. 6698), the GDPR and similar data protection laws you have rights of access, correction, deletion and objection. Since the developer does not process your personal data, there is no data to act on; everything is on your device and entirely under your control.'),
+      LegalBlock.callout('If you have a question or request, write to info@gezip.app.'),
+    ]),
+    LegalSection('Changes To This Policy', [
+      LegalBlock.p('If this policy is updated, the current text is published with the App\'s new version and on this page, and the date above changes. A material change to our data practices will be stated in the release notes.'),
+    ]),
+    LegalSection('Contact', [
+      LegalBlock.p('For questions or requests about this policy or the App\'s privacy practices:'),
+      LegalBlock.contact(),
+    ]),
+  ],
+);
+
+const termsOfUseEn = LegalDoc(
+  title: 'Terms of Use',
+  updated: '20 September 2026',
+  lead: '**Kaç Gün Oldu?** is free, offline and for personal use. Your data lives only on your device, so **backing it up is your responsibility**, and reminders are **not a tool to rely on alone for critical matters.** These and the other terms follow.',
+  sections: [
+    LegalSection('Acceptance', [
+      LegalBlock.p('By downloading, installing or using the App you accept these Terms of Use. If you do not accept them, do not use the App and remove it from your device.'),
+    ]),
+    LegalSection('The Service', [
+      LegalBlock.p('**Kaç Gün Oldu?** is a mobile app developed by EMA Labs for recording when you last did something, seeing how many days have passed and, optionally, getting reminders. It is free, needs no account and works without an internet connection.'),
+    ]),
+    LegalSection('Licence', [
+      LegalBlock.p('EMA Labs grants you a personal, non-transferable, non-exclusive, revocable licence to use the App on your own devices for personal purposes. The App is licensed, not sold.'),
+    ]),
+    LegalSection('Your Data', [
+      LegalBlock.p('The cards, records and other information you enter are yours. They are stored only on your device; EMA Labs cannot access, see or recover them. You are responsible for what you enter and how you use it. See the Privacy Policy for details.'),
+    ]),
+    LegalSection('Backups And Data Loss', [
+      LegalBlock.p('Because your data is not kept on a server, **if you uninstall the App, change phones, reset the device or the device fails, your data does not come back** (unless your operating system\'s cloud backup is on and you restore from it).'),
+      LegalBlock.p('To protect important data we recommend using **Settings → Yedeği panoya kopyala** and saving the backup somewhere safe (for example your notes app or email). EMA Labs cannot be held liable for damage arising from data loss, except where the law does not allow liability to be limited.'),
+    ]),
+    LegalSection('Reminders And Calculations', [
+      LegalBlock.p('Reminders are shown on a **best-effort** basis. A notification may be late or not arrive at all because of battery saver, do-not-disturb mode, app restrictions, a revoked notification permission or the operating system\'s scheduling limits.'),
+      LegalBlock.p('The durations, rhythm and states such as “late” that the App shows are **simple estimates** made from the dates you enter, for personal convenience. **Do not rely on the App alone for medication, health checks, safety, legal deadlines, payments or similar critical obligations**; use a separate alarm, calendar or the relevant institution\'s reminders for those.'),
+    ]),
+    LegalSection('Acceptable Use', [
+      LegalBlock.p('You may use the App only lawfully and in accordance with these terms. You may not:'),
+      LegalBlock.list([
+        'Copy, sell, rent or distribute the App to others',
+        'Attempt to extract the source code, reverse engineer or modify the App, except to the extent the law expressly allows',
+        'Remove copyright or trademark notices from the App',
+        'Use the App for any unlawful purpose',
+      ]),
+    ]),
+    LegalSection('Intellectual Property And Open Source', [
+      LegalBlock.p('The App\'s design, code, icon and name belong to EMA Labs. The App is built with Flutter and various open-source packages, and the typefaces **Instrument Serif** and **Archivo** (SIL Open Font License 1.1). The licence texts of these components can be viewed in the App under **Settings → Açık kaynak lisansları**.'),
+    ]),
+    LegalSection('Disclaimer Of Warranties', [
+      LegalBlock.p('The App is provided “as is” and “as available”. To the fullest extent permitted by law, EMA Labs gives no express or implied warranty that it will run uninterrupted or error-free, that reminders will arrive on time, or that it is fit for a particular purpose.'),
+    ]),
+    LegalSection('Limitation Of Liability', [
+      LegalBlock.p('To the fullest extent permitted by law, EMA Labs is not liable for indirect, incidental or consequential damages (including data loss or a missed reminder) arising from use of or inability to use the App. **Intent and gross negligence, and liability and rights that cannot be limited by law, including under Turkish Consumer Protection Law No. 6502, are not affected by this section.**'),
+    ]),
+    LegalSection('Changes And Termination', [
+      LegalBlock.p('We may update the App and these terms from time to time. The current terms are published in the App and on this page; continuing to use the App after a material change means you accept the current terms. You may stop using the App at any time by uninstalling it.'),
+    ]),
+    LegalSection('Google Play And The Apple App Store', [
+      LegalBlock.p('These terms are between you and EMA Labs only; Google and Apple are not parties to them and are not responsible for the App\'s maintenance, support or warranty. **On iOS**, Apple\'s Standard Licensed Application End User License Agreement (Apple Standard EULA) applies in addition to these terms; these terms do not replace it. Apple and its subsidiaries are third-party beneficiaries of these terms.'),
+    ]),
+    LegalSection('Governing Law', [
+      LegalBlock.p('These terms are governed by the laws of the Republic of Türkiye. For consumer transactions, the consumer arbitration committees and consumer courts designated by law have jurisdiction; mandatory consumer protection provisions of the country where you live are reserved.'),
+    ]),
+    LegalSection('Contact', [
+      LegalBlock.p('For questions about these terms:'),
+      LegalBlock.contact(),
+    ]),
+  ],
+);
+

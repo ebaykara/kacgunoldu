@@ -19,6 +19,8 @@ struct WidgetSnapshot {
   let theme: ThemeColors
   /// Show the "Bugün yaptım" button (Ayarlar → Ana ekran widget'ı).
   var doneButton = true
+  /// The app's wording, in the language it is set to.
+  var strings = WidgetStrings.default
   let tiers: [Tier: TierColors]
   let cards: [RawCard]
 
@@ -68,7 +70,13 @@ struct WidgetSnapshot {
         typical: typical.flatMap { $0 > 0 ? $0 : nil }
       )
     }
-    return WidgetSnapshot(theme: theme, doneButton: o["doneButton"] as? Bool ?? true, tiers: tiers, cards: cards)
+    return WidgetSnapshot(
+      theme: theme,
+      doneButton: o["doneButton"] as? Bool ?? true,
+      strings: WidgetStrings(map: o["strings"] as? [String: String] ?? [:]),
+      tiers: tiers,
+      cards: cards
+    )
   }
 
   /// A widget's "Bugün yaptım": the card is done today. The snapshot's
@@ -106,7 +114,7 @@ struct WidgetSnapshot {
 
   /// Overdue first, then everything else, each by how far along it is.
   func ordered(on date: Date) -> [WidgetCard] {
-    let all = cards.map { WidgetCard($0, on: date) }
+    let all = cards.map { WidgetCard($0, on: date, strings: strings) }
     let byRatio: (WidgetCard, WidgetCard) -> Bool = { $0.ratio > $1.ratio }
     return all.filter(\.isLate).sorted(by: byRatio) + all.filter { !$0.isLate }.sorted(by: byRatio)
   }
@@ -121,6 +129,39 @@ struct WidgetSnapshot {
     guard parts.count == 3 else { return nil }
     return DateComponents(year: parts[0], month: parts[1], day: parts[2])
   }
+}
+
+/// The text the widgets draw, as the app last published it
+/// (`Strings.widgetStrings` in lib/l10n). `{n}` is the number this side works
+/// out. The fallbacks are the Turkish originals, for a widget placed before
+/// the app has ever run.
+struct WidgetStrings {
+  var map: [String: String] = [:]
+
+  private func s(_ key: String, _ fallback: String) -> String {
+    guard let v = map[key], !v.isEmpty else { return fallback }
+    return v
+  }
+
+  private func fmt(_ key: String, _ fallback: String, _ value: Int) -> String {
+    s(key, fallback).replacingOccurrences(of: "{n}", with: "\(value)")
+  }
+
+  var title: String { s("title", "Kaç gün oldu?") }
+  func late(_ n: Int) -> String { fmt("late", "{n} kart gecikti", n) }
+  var notMarked: String { s("notMarked", "Henüz işaretlenmedi") }
+  var learning: String { s("learning", "Ritim öğreniliyor") }
+  func daysLeft(_ n: Int) -> String { fmt("daysLeft", "{n} gün kaldı", n) }
+  var dueToday: String { s("dueToday", "Bugün sırası") }
+  func daysOver(_ n: Int) -> String { fmt("daysOver", "{n} gün geçti", n) }
+  var unitDays: String { s("unitDays", "gün oldu") }
+  var unitNone: String { s("unitNone", "kayıt yok") }
+  var doneToday: String { s("doneToday", "Bugün yapıldı") }
+  var markDone: String { s("markDone", "Bugün yaptım") }
+  var firstCard: String { s("firstCard", "İlk kartını oluştur") }
+  var openApp: String { s("openApp", "Kartlarını görmek için uygulamayı aç") }
+
+  static let `default` = WidgetStrings()
 }
 
 enum Tier: String, CaseIterable { case fresh, calm, soon, late }
@@ -163,8 +204,11 @@ struct WidgetCard: Identifiable {
   let progress: Double
   /// Days left in the usual interval; negative past it, nil while learning.
   let remaining: Int?
+  /// The wording this card's lines are built from.
+  let strings: WidgetStrings
 
-  init(_ raw: WidgetSnapshot.RawCard, on date: Date) {
+  init(_ raw: WidgetSnapshot.RawCard, on date: Date, strings: WidgetStrings = .default) {
+    self.strings = strings
     id = raw.id
     name = raw.name
     icon = raw.icon
@@ -192,11 +236,11 @@ struct WidgetCard: Identifiable {
 
   /// The card's one status line — `CardStatus` in lib/widgets/card_status.dart.
   var status: String {
-    guard hasRecord else { return "Henüz işaretlenmedi" }
-    guard let r = remaining else { return "Ritim öğreniliyor" }
-    if r > 0 { return "\(r) gün kaldı" }
-    if r == 0 { return "Bugün sırası" }
-    return "\(-r) gün geçti"
+    guard hasRecord else { return strings.notMarked }
+    guard let r = remaining else { return strings.learning }
+    if r > 0 { return strings.daysLeft(r) }
+    if r == 0 { return strings.dueToday }
+    return strings.daysOver(-r)
   }
 
   /// Due today or past due: drawn in the accent, bold.
@@ -206,7 +250,7 @@ struct WidgetCard: Identifiable {
   var doneToday: Bool { hasRecord && days == 0 }
 
   var dayText: String { hasRecord ? "\(days)" : "—" }
-  var unitText: String { hasRecord ? "gün oldu" : "kayıt yok" }
+  var unitText: String { hasRecord ? strings.unitDays : strings.unitNone }
 
   var link: URL {
     let id = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id

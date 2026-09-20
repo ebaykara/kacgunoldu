@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../domain/card.dart' show CardLayout;
 import '../domain/text.dart';
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'icons.dart';
@@ -24,10 +25,11 @@ class Header extends StatefulWidget {
     required this.onProfile,
     required this.layout,
     required this.onToggleLayout,
-    this.title = 'Kaç gün oldu?',
+    this.title,
   });
 
-  final String title;
+  /// The app's own question; [S.appHeadline] when left out.
+  final String? title;
 
   /// `18 Eylül 2026`
   final String dateLabel;
@@ -55,7 +57,7 @@ class _HeaderState extends State<Header> {
   @override
   Widget build(BuildContext context) {
     final hasLate = widget.lateCount > 0;
-    final label = '${widget.lateCount} kart gecikti';
+    final label = S.lateBadge(widget.lateCount);
 
     final pill = Container(
       padding: const EdgeInsets.only(
@@ -124,7 +126,7 @@ class _HeaderState extends State<Header> {
                 Semantics(
                   button: true,
                   label: label,
-                  hint: 'gecikenleri görmek için dokun',
+                  hint: S.lateBadgeHint,
                   child: GestureDetector(
                     onTap: widget.onOpenLate,
                     onTapDown: (_) => setState(() => _pressed = true),
@@ -149,7 +151,7 @@ class _HeaderState extends State<Header> {
                 child: Semantics(
                   header: true,
                   child: Text(
-                    widget.title,
+                    widget.title ?? S.appHeadline,
                     style: display(
                       37,
                       color: AppColor.onSurface,
@@ -182,7 +184,7 @@ class Avatar extends StatelessWidget {
     return PressScale(
       onTap: onTap,
       scale: 0.92,
-      semanticsLabel: 'Profil',
+      semanticsLabel: S.profile,
       child: Container(
         width: Layout.minTouchTarget,
         height: Layout.minTouchTarget,
@@ -224,7 +226,7 @@ class LayoutToggle extends StatelessWidget {
       onTap: onTap,
       scale: 0.92,
       haptic: true,
-      semanticsLabel: toList ? 'Liste görünümü' : 'Izgara görünümü',
+      semanticsLabel: toList ? S.listView : S.gridView,
       child: Container(
         width: Layout.minTouchTarget,
         height: Layout.minTouchTarget,

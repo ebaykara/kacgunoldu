@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:flutter/services.dart' show HapticFeedback;
 
 import '../domain/logic.dart';
+import '../l10n/strings.dart';
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
@@ -36,7 +37,7 @@ class LateScreen extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const PageHeader(title: 'Gecikenler'),
+                PageHeader(title: S.lateTitle),
                 Expanded(
                   child: late.isEmpty
                       ? const _AllClear()
@@ -83,7 +84,7 @@ class LateScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(width: Space.s6),
                                 Text(
-                                  'Yaptıysan sağa kaydır',
+                                  S.swipeRightIfDone,
                                   style: ui(
                                     12,
                                     weight: FontWeight.w500,
@@ -132,7 +133,7 @@ class _Banner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$count kartın zamanı geçti',
+                  S.lateBanner(count),
                   style: ui(
                     15,
                     weight: FontWeight.w700,
@@ -141,7 +142,7 @@ class _Banner extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Hemen kontrol et, tekrarını planla.',
+                  S.lateBannerSub,
                   style: ui(12.5, color: AppColor.onOverduePill),
                 ),
               ],
@@ -183,7 +184,7 @@ class _LateRow extends StatelessWidget {
             Icon(Icons.check_rounded, color: AppColor.onPrimary),
             const SizedBox(width: Space.s8),
             Text(
-              'Bugün yaptım',
+              S.didItToday,
               style: ui(14, weight: FontWeight.w700, color: AppColor.onPrimary),
             ),
           ],
@@ -282,13 +283,13 @@ class _AllClear extends StatelessWidget {
             ),
             const SizedBox(height: Space.s16),
             Text(
-              'Her şey yerinde.',
+              S.allClear,
               textAlign: TextAlign.center,
               style: display(26, color: AppColor.onSurface, height: 1.16),
             ),
             const SizedBox(height: Space.s8),
             Text(
-              'Geciken hiçbir şey yok — nadir bir gün.',
+              S.allClearSub,
               textAlign: TextAlign.center,
               style: ui(13, color: AppColor.onSurfaceVariant, height: 1.5),
             ),

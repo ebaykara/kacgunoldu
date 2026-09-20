@@ -101,10 +101,14 @@ struct CardWidgetView: View {
     } else {
       switch family {
       case .accessoryCircular, .accessoryRectangular, .accessoryInline:
-        Text("Kaç gün oldu?")
+        Text((entry.snapshot?.strings ?? .default).title)
           .containerBackground(for: .widget) { Color.clear }
       default:
-        EmptyStateView(theme: theme, hasSnapshot: entry.snapshot != nil)
+        EmptyStateView(
+          theme: theme,
+          hasSnapshot: entry.snapshot != nil,
+          strings: entry.snapshot?.strings ?? .default
+        )
           .containerBackground(for: .widget) { theme.surface }
       }
     }
@@ -150,7 +154,11 @@ struct CardListWidgetView: View {
       if let snapshot = entry.snapshot, !entry.cards.isEmpty {
         CardListView(snapshot: snapshot, cards: entry.cards, large: family == .systemLarge)
       } else {
-        EmptyStateView(theme: theme, hasSnapshot: entry.snapshot != nil)
+        EmptyStateView(
+          theme: theme,
+          hasSnapshot: entry.snapshot != nil,
+          strings: entry.snapshot?.strings ?? .default
+        )
       }
     }
     .containerBackground(for: .widget) { theme.surface }

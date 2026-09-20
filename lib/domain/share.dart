@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../l10n/strings.dart';
 import 'card.dart';
 import 'date.dart';
 
@@ -25,11 +26,7 @@ String shareLink(Card card) {
 }
 
 /// The message the share sheet sends.
-String shareMessage(Card card) =>
-    '“${card.name}” kartını seninle paylaştım.\n'
-    'Kaç Gün Oldu? uygulamasında bağlantıya dokun ya da bu mesajı kopyalayıp '
-    'Ayarlar → Paylaşılan kartı ekle’yi seç.\n\n'
-    '${shareLink(card)}';
+String shareMessage(Card card) => S.shareMessage(card.name, shareLink(card));
 
 /// The scheme and host are optional: Flutter hands an opened link over as
 /// its path alone (`/share/<data>`), the way `cardIdFromLink` reads a widget's.
@@ -71,7 +68,7 @@ Card? parseSharedCard(String text) {
 String cardsCsv(List<Card> cards) {
   String cell(String v) =>
       v.contains(RegExp('[",\n\r]')) ? '"${v.replaceAll('"', '""')}"' : v;
-  final out = StringBuffer('Kart,Tarih,Not\r\n');
+  final out = StringBuffer('${S.csvHeader}\r\n');
   for (final card in cards) {
     for (final DateKey r in card.recs) {
       out

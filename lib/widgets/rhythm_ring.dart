@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 
@@ -47,8 +48,9 @@ class RhythmRing extends StatelessWidget {
     final stroke = _stroke * k;
     // `+8 gün` reads as a number with its unit under it; `yeni` and
     // `bugün` stay a single word.
-    final split = label.endsWith(' gün');
-    final valueText = split ? label.substring(0, label.length - 4) : label;
+    final split = label.endsWith(S.ringUnitSuffix);
+    final valueText =
+        split ? label.substring(0, label.length - S.ringUnitSuffix.length) : label;
     // Past the usual interval it reads as a sentence: `+8 gün geçti`.
     final overdue = split && valueText.startsWith('+');
     final inkColor = ink.withValues(alpha: 0.9);
@@ -91,7 +93,7 @@ class RhythmRing extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'gün',
+                            S.ringUnit,
                             maxLines: 1,
                             style: ui(
                               7.5 * k,
@@ -103,7 +105,7 @@ class RhythmRing extends StatelessWidget {
                           // `+8 gün geçti` past the interval, `4 gün kaldı`
                           // before it.
                           Text(
-                            overdue ? 'geçti' : 'kaldı',
+                            overdue ? S.ringOverWord : S.ringLeftWord,
                               maxLines: 1,
                               style: ui(7.5 * k, weight: FontWeight.w600, color: inkColor, height: 1.0),
                             ),

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart' hide Card;
 
+import '../l10n/strings.dart';
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
@@ -22,18 +23,18 @@ class ThemeScreen extends StatelessWidget {
       builder: (context, _) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const PageHeader(title: 'Tema'),
+          PageHeader(title: S.themeTitle),
           Expanded(
             child: ListView(
               padding: EdgeInsets.fromLTRB(Space.s18, Space.s8, Space.s18, media.padding.bottom + Space.s22),
               children: [
                 Text(
-                  'Renklerini seç.',
+                  S.themeLead,
                   style: display(24, color: AppColor.onSurface, height: 1.16),
                 ),
                 const SizedBox(height: Space.xs),
                 Text(
-                  'Kart durumlarının anlamı her temada aynı kalır: geciken kart her zaman en koyu renkte.',
+                  S.themeNote,
                   style: ui(13, color: AppColor.onSurfaceVariant, height: 1.45),
                 ),
                 const SizedBox(height: Space.s18),
@@ -109,7 +110,7 @@ class ThemePreview extends StatelessWidget {
       scale: 0.96,
       haptic: true,
       selected: selected,
-      semanticsLabel: '${p.name} teması',
+      semanticsLabel: S.themeSemantics(S.themeName(p.id)),
       child: AnimatedContainer(
         duration: Motion.hover,
         padding: const EdgeInsets.all(3),
@@ -134,7 +135,7 @@ class ThemePreview extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Kaç gün oldu?',
+                        S.appHeadline,
                         maxLines: 1,
                         overflow: TextOverflow.clip,
                         style: display(14, color: p.onSurface, height: 1.1),
@@ -175,7 +176,7 @@ class ThemePreview extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        p.name,
+                        S.themeName(p.id),
                         style: ui(13.5, weight: FontWeight.w700, color: p.onSurface),
                       ),
                     ),

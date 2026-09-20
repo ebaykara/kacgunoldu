@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'l10n/strings.dart';
 import 'legal/font_licenses.dart';
 import 'screens/home_screen.dart';
 import 'services/home_widgets.dart';
@@ -54,10 +55,13 @@ class KacGunOlduApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Kaç Gün Oldu?',
+      title: S.appName,
       debugShowCheckedModeBanner: false,
-      locale: const Locale('tr'),
-      supportedLocales: const [Locale('tr')],
+      // `null` under AppLang.system, so Flutter resolves the device's own
+      // locale for the calendar and the system dialogs — the same fallback
+      // order our own strings use (see `applyLang`).
+      locale: appLocale,
+      supportedLocales: supportedLangLocales,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

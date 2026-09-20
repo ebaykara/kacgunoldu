@@ -21,7 +21,7 @@ flutter analyze   # 0 uyarı olmalı
 ```
 
 ```bash
-flutter test      # 182 test, hepsi geçmeli
+flutter test      # 209 test, hepsi geçmeli
 ```
 
 ```bash
@@ -36,7 +36,11 @@ testleriyle yapılıyor. Kullanıcı açıkça isterse o zaman `flutter run -d c
 
 ```
 lib/
-  main.dart                 tema, sistem çubukları, yazı boyutu sınırı (1.3x)
+  main.dart                 tema, dil (locale), sistem çubukları, yazı boyutu sınırı (1.3x)
+  l10n/strings.dart         AppLang (system/tr/en) · S (etkin dilin metinleri) · applyLang
+                            · Strings (soyut: bütün metinler, veriler, biçimler)
+  l10n/strings_tr.dart      Türkçe — tasarımın özgün metinleri
+  l10n/strings_en.dart      İngilizce
   theme/tokens.dart         Palette + palettes (6 tema) · AppColor · Space · Radii
                             · Elevation · Motion · Layout
   theme/system_bars.dart    çubuk stili + SystemBarsRegion (kökte; bkz. tuzak 16)
@@ -52,12 +56,15 @@ lib/
   domain/share.dart         sunucusuz kart paylaşımı (kacgunoldu://app/share/<base64url>)
                             · cardsCsv (CSV dışa aktarma)
   domain/templates.dart     Yeni kart'taki "Hazır kartlar"
-  domain/text.dart          capitalizeTr · upperTr · lowerTr · initialsOf
+  domain/text.dart          capitalizeTr · upperTr (dile göre) · lowerTr · foldedForms
+                            (eşleştirme: hem Türkçe hem düz küçük harf) · initialsOf
   domain/frequency.dart     "Ne sıklıkla" çipleri (Her gün … Yılda bir)
-  domain/icon_guess.dart    addan simge tahmini (diş → tooth, spor → gym …)
+  domain/icon_guess.dart    addan simge tahmini (diş → tooth, spor → gym …); anahtar
+                            kelimeler iki dilde de aynı listede
   domain/insights.dart      profil sayıları: toplamlar, aylık, en düzenli, en ihmal
   domain/reminders.dart     planReminders: hangi bildirim ne zaman (saf)
-  domain/reminder_copy.dart bildirim metinleri: konu KART ADINDAN (simgeden değil), konu başına şablonlar
+  domain/reminder_copy.dart bildirim metinleri: konu KART ADINDAN (simgeden değil); kökler
+                            iki dilde tek listede, şablonlar S.reminderCopy'de
   services/reminders.dart   Reminders arayüzü · LocalReminders (OS) · NoopReminders
   services/home_widgets.dart  ana ekran widget'ları: widgetSnapshot · HomeWidgets
                             (Platform/Noop) · cardIdFromLink (bkz. tuzak 18)
@@ -76,7 +83,7 @@ lib/
                                     (telefon yedeği bilgisi, CSV), silme, Hakkında
   screens/archive_screen.dart       Arşiv: listeden kaldırılmış kartlar
   screens/legal_screen.dart         Gizlilik politikası / Kullanım koşulları (legal_text.dart'tan)
-  legal/                            legal_model · legal_text (ÜRETİLİR) · font_licenses (OFL)
+  legal/                            legal_model · legal_text (ÜRETİLİR: TR + EN) · font_licenses (OFL)
   app_info.dart                     appVersion (pubspec ile aynı; test kontrol eder)
   screens/legend_screen.dart        Durum renkleri
   screens/theme_screen.dart         Tema seçici (canlı önizlemeli)
@@ -87,7 +94,8 @@ lib/
                             store_snack · timeline · empty_state · icons · ui
                             confirm_destructive · gap_chart (detayda "Aralıklar")
                             · note_sheet (kayda not)
-test/  domain · storage · state · theme · widgets · screens
+test/  domain · l10n · storage · state · theme · widgets · screens
+      flutter_test_config.dart: bütün testlerde cihaz dilini Türkçe'ye sabitler
 store/  mağaza metinleri, gizlilik politikası, Play form cevapları, görseller (README)
 tool/create_upload_key.ps1   yükleme anahtarı + android/key.properties (git dışı)
 tool/gen_widget_glyphs.py    kart simgelerinin widget kopyaları (Android wg_* + iOS glyph_*)
@@ -131,15 +139,46 @@ kullanıcının girdisi, türetilmiş değil; bozuksa kart atılmaz, alan yok sa
 Arşivli kart `store.cards`'ta yoktur (ızgara, zaman tüneli, gecikenler, profil, widget,
 bildirim hepsi onu görmez); `archivedCards` ve `byId` görür. `recs` mutlak ISO tarihleri (`YYYY-MM-DD`), en
 yeniden eskiye. **Türetilmiş hiçbir değer saklanmaz.** Profil (`name`, `handle`)
-ayrı anahtarda (`nezaman.profile.v1`). Kart düzeni (ızgara/liste) `nezaman.layout.v1`;
+ayrı anahtarda (`nezaman.profile.v1`). Dil `nezaman.lang.v1` (yoksa telefonun dili). Kart düzeni (ızgara/liste) `nezaman.layout.v1`;
 başlıktaki avatarın solundaki düğme değiştirir, seçim kalıcıdır. Kaydı olmayan kart asla geç sayılmaz.
 
 Gün sayıları takvim günü sınırında hesaplanır (24 saat değil); `today` gece
 yarısı `Timer`'ı ve `didChangeAppLifecycleState` ile tazelenir.
 
+## Diller
+
+Uygulama Türkçe ve İngilizce. Varsayılan **telefonun dili**; `Ayarlar → Dil`'den
+`Telefonun dili / Türkçe / English` seçilebilir ve seçim kalıcıdır
+(`nezaman.lang.v1`). İngilizce olmayan her cihaz dili Türkçe'ye düşer.
+
+- **Ekranlara metin yazma.** Her metin `Strings`'te bir üye; `S.xxx` ile okunur.
+  `S` de `AppColor` gibi genel bir getter'dır (bkz. tuzak 14): `const` ifadede
+  kullanılamaz, varsayılan parametre değeri olamaz. Yeni metin eklerken soyut
+  `Strings`'e ekle — analyzer iki dilde de doldurmaya zorlar.
+- Dil değişimi `CardStore.setLang`: kaydeder, widget'ları ve bildirimleri
+  yeniden kurar, bütün ağacı yeniden çizer (`_rebuildEverything`).
+  Telefonun dili açıkken değişirse `didChangeLocales` aynısını yapar.
+- **Kart adları çevrilmez.** Kullanıcının yazdığı addır; dil değişince olduğu gibi
+  kalır. Bu yüzden ad üzerinden çalışan eşleştirmeler (simge tahmini, bildirim
+  konusu, arama) iki dilin anahtarlarını da tek listede tutar ve `foldedForms`
+  ile hem Türkçe hem düz küçük harfe bakar.
+- Ana ekran widget'ları günü kendileri sayar, bu yüzden **metin şablonları
+  anlık görüntüyle taşınır** (`S.widgetStrings`, `{n}` sayı yerine geçer).
+  Kotlin `WidgetStrings`, Swift `WidgetStrings`; ikisinin de yedeği Türkçe.
+  Yeni anahtar eklersen üç yeri birden güncelle.
+- Android'in kendi çizdiği yüzeyler (widget seçici, "Hangi kart?" ekranı)
+  `res/values` + `res/values-en` ile **telefonun dilini** izler; uygulama içi
+  seçim oraya ulaşmaz.
+- iOS widget galerisindeki başlık/açıklama (`configurationDisplayName`,
+  `.description`, `CardIntent`) hâlâ Türkçe sabit: `LocalizedStringResource`
+  bir string catalog ister, o da Xcode'da hedefe eklenmeli.
+- Hukuki metinler `store/legal/content.py`'den iki dilde üretilir; yalnız Dart
+  dosyasını yenilemek için `python store/legal/build.py --dart`.
+
 ## Metinler
 
-Türkçe ve kesin. Değiştirmen istenmediyse aynen kalsın:
+Türkçe metinler tasarımın özgün hali; `l10n/strings_tr.dart`'ta durur.
+Değiştirmen istenmediyse aynı kalsın (İngilizce karşılığı da aynı tonu izler):
 
 - Başlık `Kaç gün oldu?` — altında açıklama satırı **yok**
 - Rozet yalnızca gecikme varsa: `{n} kart gecikti`; gecikme yoksa hiçbir rozet

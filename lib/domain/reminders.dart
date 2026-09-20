@@ -1,3 +1,4 @@
+import '../l10n/strings.dart';
 import 'card.dart';
 import 'date.dart';
 import 'frequency.dart';
@@ -83,7 +84,7 @@ List<Reminder> planReminders(
     final due = shiftDays(last, typical);
     // Only a rhythm the user chose is worth naming; a learned one is noise.
     final goal = card.every != null
-        ? ' Hedefin ${frequencyLabel(card.every!).toLowerCase()}.'
+        ? S.goalSuffix(frequencyLabel(card.every!))
         : '';
 
     var scheduled = false;

@@ -101,7 +101,10 @@ internal object WidgetViews {
         v.setViewVisibility(buttonId, android.view.View.VISIBLE)
         v.tint(bgId, if (card.doneToday) colors.ring else withAlpha(colors.ink, 0.1f))
         v.setInt(iconId, "setColorFilter", if (card.doneToday) colors.bg else colors.ink)
-        v.setContentDescription(buttonId, if (card.doneToday) "Bugün yapıldı" else "Bugün yaptım")
+        v.setContentDescription(
+            buttonId,
+            if (card.doneToday) snapshot.strings.doneToday else snapshot.strings.markDone,
+        )
         val intent = Intent(context, CardWidget::class.java)
             .setAction(ACTION_DONE)
             .setData(Uri.parse("kacgunoldu://done/${Uri.encode(card.id)}"))

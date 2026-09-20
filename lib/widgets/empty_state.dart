@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart' hide Card;
 
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'ui.dart';
@@ -15,13 +16,8 @@ class Suggestion {
   final int every;
 }
 
-const suggestions = [
-  Suggestion('Saçımı kestirdim', 'scissors', 30),
-  Suggestion('Diş hekimine gittim', 'tooth', 180),
-  Suggestion('Spor salonuna gittim', 'gym', 3),
-  Suggestion('Çarşafları değiştirdim', 'bed', 14),
-  Suggestion('Bitkileri suladım', 'plant', 3),
-  Suggestion('Anneme telefon ettim', 'phone', 7),
+List<Suggestion> get suggestions => [
+  for (final (name, icon, every) in S.suggestions) Suggestion(name, icon, every),
 ];
 
 /// First run, or after every card is gone: a friendly start instead of a
@@ -96,25 +92,25 @@ class _EmptyStateState extends State<EmptyState>
             Semantics(
               header: true,
               child: Text(
-                'Hayatındaki küçük\nşeyleri takip etmeye başla.',
+                S.emptyTitle,
                 textAlign: TextAlign.center,
                 style: display(27, color: AppColor.onSurface, height: 1.16),
               ),
             ),
             const SizedBox(height: Space.s12),
             Text(
-              'En son ne zaman yaptığını merak ettiğin\nbir şey ekle.',
+              S.emptyBody,
               textAlign: TextAlign.center,
               style: ui(13.5, color: AppColor.onSurfaceVariant, height: 1.5),
             ),
             const SizedBox(height: Space.s22),
             PrimaryButton(
-              label: 'İlk kartını oluştur',
+              label: S.emptyCta,
               icon: Icons.add_rounded,
               onTap: widget.onCreate,
             ),
             const SizedBox(height: 30),
-            const SectionTitle('Önerilen kartlar'),
+            SectionTitle(S.suggestedCards),
             LayoutBuilder(
               builder: (context, constraints) {
                 final w = math.max(0.0, (constraints.maxWidth - Space.s12) / 2);

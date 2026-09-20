@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' hide Card;
 import '../domain/card.dart';
 import '../domain/date.dart';
 import '../domain/logic.dart';
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'card_glyph.dart';
@@ -56,22 +57,22 @@ List<TimelineEntry> buildTimeline(
       if (i == 0) {
         final r = d.stats.remaining;
         if (r == null) {
-          status = 'Yeni';
+          status = S.timelineNew;
           tone = Tier.fresh;
         } else if (r < 0) {
-          status = '+${-r} gün';
+          status = S.ringOver(-r);
           tone = d.stats.isLate ? Tier.late : Tier.soon;
         } else if (r == 0) {
-          status = 'sırası bugün';
+          status = S.timelineDueToday;
           tone = Tier.soon;
         } else {
-          status = '$r gün kaldı';
+          status = S.statusDaysLeft(r);
           tone = null;
         }
       } else {
         status = i + 1 < c.recs.length
-            ? '${daysSince(c.recs[i + 1], key)} gün arayla'
-            : 'ilk kayıt';
+            ? S.gapApart(daysSince(c.recs[i + 1], key))
+            : S.firstRecord;
         tone = null;
       }
       entries.add(
@@ -93,11 +94,7 @@ List<TimelineEntry> buildTimeline(
 }
 
 /// `bugün` / `dün` / `3 gün` — the timeline's compact "how long ago".
-String timelineAgo(int offset) => switch (offset) {
-  0 => 'bugün',
-  1 => 'dün',
-  _ => '$offset gün',
-};
+String timelineAgo(int offset) => S.timelineAge(offset);
 
 /// The segmented `Tümü | Hafta | Ay` control.
 class RangeSelector extends StatelessWidget {
@@ -108,10 +105,10 @@ class RangeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labels = {
-      TimelineRange.all: 'Tümü',
-      TimelineRange.week: 'Hafta',
-      TimelineRange.month: 'Ay',
+    final labels = {
+      TimelineRange.all: S.rangeAll,
+      TimelineRange.week: S.rangeWeek,
+      TimelineRange.month: S.rangeMonth,
     };
     return Row(
       children: [
@@ -201,8 +198,12 @@ class TimelineRow extends StatelessWidget {
       child: PressScale(
         onTap: onTap,
         scale: 0.985,
-        semanticsLabel:
-            '${d.day} ${months[d.month - 1]}, ${entry.card.name}, $ago, ${entry.status}',
+        semanticsLabel: S.timelineRowSemantics(
+          S.dayMonth(d.day, d.month),
+          entry.card.name,
+          ago,
+          entry.status,
+        ),
         child: ExcludeSemantics(
           child: Row(
             children: [

@@ -1,6 +1,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 
 /// The shared sheet shell — MD3 modal bottom sheet / HIG sheet at a medium
@@ -32,7 +33,7 @@ class _SheetRoute<T> extends PopupRoute<T> {
   bool get barrierDismissible => true;
 
   @override
-  String get barrierLabel => 'Kapat';
+  String get barrierLabel => S.close;
 
   @override
   bool get opaque => false;

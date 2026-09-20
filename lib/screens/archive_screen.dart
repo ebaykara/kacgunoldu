@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Card;
 
 import '../domain/logic.dart';
+import '../l10n/strings.dart';
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
@@ -28,15 +29,14 @@ class ArchiveScreen extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const PageHeader(title: 'Arşiv'),
+                PageHeader(title: S.archiveTitle),
                 Expanded(
                   child: cards.isEmpty
                       ? Center(
                           child: Padding(
                             padding: const EdgeInsets.all(Space.s22),
                             child: Text(
-                              'Arşivde kart yok. Bir kartı kartın ⋯ '
-                              'menüsünden arşivleyebilirsin.',
+                              S.archiveEmpty,
                               textAlign: TextAlign.center,
                               style: ui(
                                 13.5,
@@ -60,8 +60,7 @@ class ArchiveScreen extends StatelessWidget {
                                 bottom: Space.s14,
                               ),
                               child: Text(
-                                'Arşivdeki kartlar kart listende görünmez, gecikme '
-                                'sayılmaz ve hatırlatılmaz. Kayıtları olduğu gibi durur.',
+                                S.archiveNote,
                                 style: ui(
                                   13,
                                   color: AppColor.onSurfaceVariant,

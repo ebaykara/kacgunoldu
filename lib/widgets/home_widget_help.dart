@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:flutter/material.dart' hide Card;
 
 import '../domain/card.dart';
+import '../l10n/strings.dart';
 import '../services/home_widgets.dart' show PinResult;
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
@@ -34,18 +35,17 @@ Future<void> _showPinBlocked(BuildContext context, CardStore store, {Card? card}
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Telefonun eklemeye izin vermiyor',
+          S.widgetCantPinTitle,
           style: display(24, color: AppColor.onSurface, height: 1.14),
         ),
         const SizedBox(height: Space.s8),
         Text(
-          'Onay penceresinde “Reddet”i seçince telefon bu isteği bir daha sormadan '
-          'engelliyor. İzinler sayfasında “Ana ekran kısayolları”nı açıp tekrar dene.',
+          S.widgetCantPinBody,
           style: ui(14, color: AppColor.onSurfaceVariant, height: 1.45),
         ),
         const SizedBox(height: Space.s18),
         PrimaryButton(
-          label: 'İzni aç',
+          label: S.widgetOpenPermission,
           icon: Icons.open_in_new_rounded,
           onTap: () {
             Navigator.of(sheetContext).pop();
@@ -54,7 +54,7 @@ Future<void> _showPinBlocked(BuildContext context, CardStore store, {Card? card}
         ),
         const SizedBox(height: Space.s8),
         QuietButton(
-          label: 'Elle eklemeyi göster',
+          label: S.widgetShowManual,
           onTap: () {
             Navigator.of(sheetContext).pop();
             showHomeWidgetHelp(context, card: card);
@@ -71,22 +71,7 @@ Future<void> _showPinBlocked(BuildContext context, CardStore store, {Card? card}
 Future<void> showHomeWidgetHelp(BuildContext context, {Card? card}) {
   final ios = defaultTargetPlatform == TargetPlatform.iOS;
   final pick = card == null ? null : '“${card.name}”';
-  final steps = ios
-      ? [
-          'Ana ekranda boş bir yere basılı tut, sol üstteki Düzenle → Widget ekle’ye dokun.',
-          'Listeden Kaç Gün Oldu?’yu seç: tek kart için Kart, birkaçı için Kartlar.',
-          pick == null
-              ? 'Kart’ın göstereceği kartı seçmek için widget’a basılı tut → Widget’ı Düzenle.'
-              : 'Widget’a basılı tut → Widget’ı Düzenle → Kart: $pick.',
-          'Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir.',
-        ]
-      : [
-          'Ana ekranda boş bir yere basılı tut, Widget’lar’a dokun.',
-          'Kaç Gün Oldu?’yu bul: tek kart için Kart, birkaçı için Kartlar.',
-          pick == null
-              ? 'Kart’ı ekleyince hangi kartı göstereceğini sorar.'
-              : 'Kart’ı ekleyince açılan listeden $pick kartını seç.',
-        ];
+  final steps = S.widgetHelpSteps(ios: ios, pick: pick);
   return showAppSheet<void>(
     context: context,
     reduceMotion: MediaQuery.of(context).disableAnimations,
@@ -95,13 +80,12 @@ Future<void> showHomeWidgetHelp(BuildContext context, {Card? card}) {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Ana ekrana widget ekle',
+          S.widgetHelpTitle,
           style: display(24, color: AppColor.onSurface, height: 1.14),
         ),
         const SizedBox(height: Space.s6),
         Text(
-          'Kartlarının kaç gün olduğunu uygulamayı açmadan gör; '
-          '“Bugün yaptım”a widget’tan dokun.',
+          S.widgetHelpBody,
           style: ui(13.5, color: AppColor.onSurfaceVariant, height: 1.4),
         ),
         const SizedBox(height: Space.s14),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -8,6 +9,9 @@ import 'package:share_plus/share_plus.dart';
 import '../app_info.dart';
 import '../domain/reminders.dart';
 import '../domain/share.dart';
+import '../l10n/strings.dart';
+import '../l10n/strings_en.dart';
+import '../l10n/strings_tr.dart';
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
@@ -28,6 +32,50 @@ class SettingsScreen extends StatelessWidget {
 
   final CardStore store;
 
+  /// "Dil" — the phone's language, or one the person picks. Applied at once,
+  /// which also rewrites the pending reminders and the home screen widgets.
+  Future<void> _pickLanguage(BuildContext context) {
+    return showAppSheet<void>(
+      context: context,
+      reduceMotion: MediaQuery.of(context).disableAnimations,
+      builder: (sheetContext) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            S.language,
+            style: display(26, color: AppColor.onSurface, height: 1.14),
+          ),
+          const SizedBox(height: Space.s14),
+          for (final option in AppLang.values)
+            ActionRow(
+              icon: option == store.lang
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              label: switch (option) {
+                AppLang.system => S.languageSystem,
+                AppLang.tr => const TrStrings().langName,
+                AppLang.en => const EnStrings().langName,
+              },
+              detail: option == AppLang.system
+                  ? _systemLanguageName()
+                  : null,
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                store.setLang(option);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// What [AppLang.system] resolves to on this phone right now.
+  String _systemLanguageName() {
+    final device = PlatformDispatcher.instance.locale.languageCode.toLowerCase();
+    return device == 'en' ? const EnStrings().langName : const TrStrings().langName;
+  }
+
   Future<void> _pickTime(BuildContext context) async {
     final picked = await showTimePicker(
       context: context,
@@ -35,9 +83,9 @@ class SettingsScreen extends StatelessWidget {
         hour: store.reminderHour,
         minute: store.reminderMinute,
       ),
-      helpText: 'Hatırlatma saati',
-      cancelText: 'Vazgeç',
-      confirmText: 'Tamam',
+      helpText: S.reminderTime,
+      cancelText: S.cancel,
+      confirmText: S.ok,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
         child: child!,
@@ -48,28 +96,27 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _copyBackup() async {
     await Clipboard.setData(ClipboardData(text: store.exportJson()));
-    store.toast('Yedek panoya kopyalandı');
+    store.toast(S.backupCopied);
   }
 
   Future<void> _restore(BuildContext context) async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final text = data?.text;
     if (text == null || text.trim().isEmpty) {
-      store.toast('Panoda yedek bulunamadı');
+      store.toast(S.noBackupOnClipboard);
       return;
     }
     if (!context.mounted) return;
     final ok = await confirmDestructive(
       context,
-      title: 'Yedek geri yüklensin mi?',
-      message:
-          'Şu anki bütün kartların, panodaki yedekle değiştirilecek. Bu işlem geri alınamaz.',
-      confirmLabel: 'Geri yükle',
-      cancelLabel: 'Vazgeç',
+      title: S.restoreTitle,
+      message: S.restoreMessage,
+      confirmLabel: S.restore,
+      cancelLabel: S.cancel,
     );
     if (!ok) return;
     if (store.importJson(text) == null) {
-      store.toast('Panodaki metin geçerli bir yedek değil');
+      store.toast(S.notAValidBackup);
     }
   }
 
@@ -84,7 +131,7 @@ class SettingsScreen extends StatelessWidget {
       ShareParams(
         files: [XFile.fromData(bytes, mimeType: 'text/csv')],
         fileNameOverrides: ['kac-gun-oldu-${store.today}.csv'],
-        subject: 'Kaç Gün Oldu? kayıtları',
+        subject: S.csvSubject,
       ),
     );
   }
@@ -94,7 +141,7 @@ class SettingsScreen extends StatelessWidget {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final shared = parseSharedCard(data?.text ?? '');
     if (shared == null) {
-      store.toast('Panoda paylaşılan bir kart bulunamadı');
+      store.toast(S.noSharedCardOnClipboard);
       return;
     }
     final id = store.importSharedCard(shared);
@@ -112,27 +159,11 @@ class SettingsScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Telefonun yedeği',
+            S.systemBackup,
             style: display(26, color: AppColor.onSurface, height: 1.14),
           ),
           const SizedBox(height: Space.s12),
-          for (final line in const [
-            'Android’de Google hesabına yedekleme, iPhone’da iCloud yedeği '
-                'açıksa kartların ve kayıtların da otomatik olarak o yedeğe '
-                'girer.',
-            'Yeni telefonu kurarken bu yedekten geri yüklersen kartların '
-                'kendiliğinden gelir; hatırlatmalar da yeniden kurulur.',
-            'Yedeği telefonun ayarlarından açıp kapatabilirsin. Bu yedeği '
-                'Google ya da Apple tutar; biz göremeyiz.',
-            'Yedek günde bir kez, telefon şarjdayken ve Wi-Fi varken alınır; '
-                'bugünkü son kayıtların henüz yedekte olmayabilir.',
-            'Geri yükleme yalnızca uygulamayı kurarken olur; uygulama '
-                'kuruluyken yedeğe dönemezsin. Mağaza dışından kurulan '
-                'sürümlerde geri yükleme her telefonda çalışmayabilir.',
-            'Yedeği kapatmışsan hiçbir şey yedeklenmez. Bunun yerine '
-                'Ayarlar’daki “Yedeği panoya kopyala” ile verilerini elle '
-                'saklayabilirsin.',
-          ])
+          for (final line in S.systemBackupExplainer)
             Padding(
               padding: const EdgeInsets.only(bottom: Space.s8),
               child: Text(
@@ -146,7 +177,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           const SizedBox(height: Space.s8),
           PrimaryButton(
-            label: 'Tamam',
+            label: S.ok,
             onTap: () => Navigator.of(sheetContext).pop(),
           ),
         ],
@@ -157,11 +188,10 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _clearAll(BuildContext context) async {
     final ok = await confirmDestructive(
       context,
-      title: 'Bütün kartlar silinsin mi?',
-      message:
-          'Bütün kartlar ve kayıtları kalıcı olarak silinir. Bu işlem geri alınamaz.',
-      confirmLabel: 'Hepsini sil',
-      cancelLabel: 'Vazgeç',
+      title: S.deleteAllTitle,
+      message: S.deleteAllMessage,
+      confirmLabel: S.deleteAll,
+      cancelLabel: S.cancel,
     );
     if (!ok) return;
     store.clearAll();
@@ -178,7 +208,7 @@ class SettingsScreen extends StatelessWidget {
           builder: (context, _) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const PageHeader(title: 'Ayarlar'),
+              PageHeader(title: S.settingsTitle),
               Expanded(
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(
@@ -189,12 +219,20 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   children: [
                     _Group(
-                      title: 'Görünüm',
+                      title: S.groupAppearance,
                       children: [
                         ActionRow(
+                          icon: Icons.language_rounded,
+                          label: S.language,
+                          detail: store.lang == AppLang.system
+                              ? '${S.languageSystem} · ${S.langName}'
+                              : S.langName,
+                          onTap: () => _pickLanguage(context),
+                        ),
+                        ActionRow(
                           icon: Icons.color_lens_outlined,
-                          label: 'Tema',
-                          detail: AppColor.current.name,
+                          label: S.theme,
+                          detail: S.themeName(AppColor.current.id),
                           onTap: () => pushPage<void>(context, (_) => ThemeScreen(store: store)),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -218,25 +256,25 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                     _Group(
-                      title: 'Profil',
+                      title: S.groupProfile,
                       children: [
                         ActionRow(
                           icon: Icons.person_outline_rounded,
-                          label: 'Profili düzenle',
+                          label: S.editProfile,
                           detail: store.profile.isEmpty
-                              ? 'Adını ekle'
+                              ? S.addYourName
                               : store.profile.name,
                           onTap: () => editProfile(context, store),
                         ),
                       ],
                     ),
                     _Group(
-                      title: 'Kartlar',
+                      title: S.groupCards,
                       children: [
                         ActionRow(
                           icon: Icons.palette_outlined,
-                          label: 'Durum renkleri',
-                          detail: 'Kartın rengi ne anlatıyor?',
+                          label: S.statusColours,
+                          detail: S.statusColoursDetail,
                           onTap: () => pushPage<void>(
                             context,
                             (_) => const LegendScreen(),
@@ -244,19 +282,19 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         ActionRow(
                           icon: Icons.sort_rounded,
-                          label: 'Sıralamayı sıfırla',
+                          label: S.resetOrder,
                           detail: store.hasManualOrder
-                              ? 'Sürükleyerek verdiğin sıra unutulur, kartlar aciliyete göre dizilir'
-                              : 'Kartlar zaten aciliyete göre sıralı',
+                              ? S.resetOrderDetail
+                              : S.resetOrderNoop,
                           enabled: store.hasManualOrder,
                           onTap: store.resetOrder,
                         ),
                         ActionRow(
                           icon: Icons.archive_outlined,
-                          label: 'Arşiv',
+                          label: S.archive,
                           detail: store.archivedCards.isEmpty
-                              ? 'Arşivde kart yok'
-                              : '${store.archivedCards.length} kart arşivde',
+                              ? S.archiveEmptyDetail
+                              : S.archiveCount(store.archivedCards.length),
                           onTap: () => pushPage<void>(
                             context,
                             (_) => ArchiveScreen(store: store),
@@ -264,31 +302,31 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         ActionRow(
                           icon: Icons.move_to_inbox_outlined,
-                          label: 'Paylaşılan kartı ekle',
-                          detail: 'Sana gönderilen mesajı kopyala, sonra dokun',
+                          label: S.importShared,
+                          detail: S.importSharedDetail,
                           onTap: () => _importShared(context),
                         ),
                         ActionRow(
                           icon: Icons.library_add_outlined,
-                          label: 'Örnek kartları ekle',
-                          detail: 'Uygulamayı denemek için hazır kartlar',
+                          label: S.loadSamples,
+                          detail: S.loadSamplesDetail,
                           onTap: () {
                             if (store.loadSamples() == 0) {
-                              store.toast('Örnek kartların hepsi zaten ekli');
+                              store.toast(S.samplesAlreadyThere);
                             }
                           },
                         ),
                       ],
                     ),
                     _Group(
-                      title: 'Bildirimler',
+                      title: S.groupNotifications,
                       children: [
                         ActionRow(
                           icon: Icons.schedule_rounded,
-                          label: 'Hatırlatma saati',
+                          label: S.reminderTime,
                           detail: store.reminderCount == 0
-                              ? 'Kart eklerken “Bana hatırlat”ı aç'
-                              : '${store.reminderCount} kart için hatırlatma açık',
+                              ? S.reminderTimeNoneDetail
+                              : S.reminderTimeCount(store.reminderCount),
                           onTap: () => _pickTime(context),
                           trailing: Text(
                             timeLabel(store.reminderHour, store.reminderMinute),
@@ -301,39 +339,39 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         ActionRow(
                           icon: Icons.notifications_active_outlined,
-                          label: 'Test bildirimi gönder',
-                          detail: 'Bildirimin nasıl görüneceğini gör',
+                          label: S.sendTestNotification,
+                          detail: S.sendTestNotificationDetail,
                           onTap: store.sendTestReminder,
                         ),
                       ],
                     ),
                     _Group(
-                      title: "Ana ekran widget'ı",
+                      title: S.groupHomeWidget,
                       children: [
                         if (store.canPinWidget) ...[
                           ActionRow(
                             icon: Icons.widgets_outlined,
-                            label: "Kart widget'ı ekle",
-                            detail: 'Tek bir kartın kaç gün olduğu',
+                            label: S.addCardWidget,
+                            detail: S.addCardWidgetDetail,
                             onTap: () => pinHomeWidget(context, store),
                           ),
                           ActionRow(
                             icon: Icons.view_agenda_outlined,
-                            label: "Kartlar widget'ı ekle",
-                            detail: 'Sırası en yakın kartlar bir arada',
+                            label: S.addListWidget,
+                            detail: S.addListWidgetDetail,
                             onTap: () => pinHomeWidget(context, store, list: true),
                           ),
                         ] else
                           ActionRow(
                             icon: Icons.widgets_outlined,
-                            label: 'Ana ekrana widget ekle',
-                            detail: 'Kartların uygulamayı açmadan görünsün',
+                            label: S.addHomeWidget,
+                            detail: S.addHomeWidgetDetail,
                             onTap: () => showHomeWidgetHelp(context),
                           ),
                         ActionRow(
                           icon: Icons.check_circle_outline_rounded,
-                          label: '“Bugün yaptım” düğmesi',
-                          detail: "Widget'tan tek dokunuşla işaretle",
+                          label: S.doneButtonSetting,
+                          detail: S.doneButtonSettingDetail,
                           onTap: () => store.setWidgetDoneButton(!store.widgetDoneButton),
                           trailing: Switch(
                             value: store.widgetDoneButton,
@@ -350,43 +388,42 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                     _Group(
-                      title: 'Yedekleme',
+                      title: S.groupBackup,
                       children: [
                         ActionRow(
                           icon: Icons.cloud_done_outlined,
-                          label: 'Telefonun yedeği',
-                          detail: 'Google ya da iCloud yedeği açıksa kartların da yedeklenir',
+                          label: S.systemBackup,
+                          detail: S.systemBackupDetail,
                           onTap: () => _explainSystemBackup(context),
                         ),
                         ActionRow(
                           icon: Icons.copy_rounded,
-                          label: 'Yedeği panoya kopyala',
-                          detail:
-                              'Notlarına ya da kendine mesaj olarak yapıştır',
+                          label: S.copyBackup,
+                          detail: S.copyBackupDetail,
                           onTap: _copyBackup,
                         ),
                         ActionRow(
                           icon: Icons.content_paste_rounded,
-                          label: 'Panodaki yedeği geri yükle',
-                          detail: 'Kopyaladığın yedeği bu cihaza aktar',
+                          label: S.restoreBackup,
+                          detail: S.restoreBackupDetail,
                           onTap: () => _restore(context),
                         ),
                         ActionRow(
                           icon: Icons.table_chart_outlined,
-                          label: 'CSV olarak dışa aktar',
-                          detail: 'Bütün kayıtlar, tablo programında açılır',
+                          label: S.exportCsv,
+                          detail: S.exportCsvDetail,
                           enabled: store.hasAnyCards,
                           onTap: _exportCsv,
                         ),
                       ],
                     ),
                     _Group(
-                      title: 'Tehlikeli bölge',
+                      title: S.groupDanger,
                       children: [
                         ActionRow(
                           icon: Icons.delete_forever_outlined,
-                          label: 'Bütün kartları sil',
-                          detail: 'Geri alınamaz',
+                          label: S.deleteAllCards,
+                          detail: S.notUndoable,
                           destructive: true,
                           enabled: store.hasAnyCards,
                           onTap: () => _clearAll(context),
@@ -394,17 +431,17 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                     _Group(
-                      title: 'Hakkında',
+                      title: S.groupAbout,
                       children: [
                         ActionRow(
                           icon: Icons.privacy_tip_outlined,
-                          label: 'Gizlilik politikası',
-                          detail: 'Hiçbir veri toplanmaz',
+                          label: S.privacyPolicyRow,
+                          detail: S.privacyPolicyRowDetail,
                           onTap: () => openPrivacy(context),
                         ),
                         ActionRow(
                           icon: Icons.description_outlined,
-                          label: 'Kullanım koşulları',
+                          label: S.termsRow,
                           onTap: () => openTerms(context),
                         ),
                       ],
@@ -416,17 +453,17 @@ class SettingsScreen extends StatelessWidget {
                     // in the list above.
                     Semantics(
                       button: true,
-                      label: 'Açık kaynak lisansları',
+                      label: S.openSourceLicenses,
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () => showLicensePage(
                           context: context,
-                          applicationName: 'Kaç Gün Oldu?',
+                          applicationName: S.appName,
                           applicationVersion: appVersion,
                           applicationLegalese: '© 2026 EMA Labs',
                         ),
                         child: Text(
-                          'Kaç gün oldu? · $appVersion',
+                          S.versionLine(appVersion),
                           textAlign: TextAlign.center,
                           style: ui(
                             12,
@@ -438,7 +475,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Bütün verin yalnızca bu cihazda durur.',
+                      S.dataStaysHere,
                       textAlign: TextAlign.center,
                       style: ui(12, color: AppColor.outline),
                     ),

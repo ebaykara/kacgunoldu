@@ -5,20 +5,18 @@
 /// derived at render time from "today".
 library;
 
+import '../l10n/strings.dart';
+
 /// `YYYY-MM-DD`, a local calendar day.
 typedef DateKey = String;
 
-const dow = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+/// Sunday first — index with `dow[d.weekday % 7]`, since Dart's `weekday`
+/// starts the week on Monday.
+List<String> get dow => S.dow;
 
-const months = [
-  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
-];
+List<String> get months => S.months;
 
-const monthsShort = [
-  'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
-  'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara',
-];
+List<String> get monthsShort => S.monthsShort;
 
 String _pad(int n) => n < 10 ? '0$n' : '$n';
 
@@ -54,22 +52,22 @@ int daysSince(DateKey key, DateKey reference) {
 String formatDayMonth(DateKey key, DateKey reference) {
   final d = fromDateKey(key);
   final sameYear = d.year == fromDateKey(reference).year;
-  return '${d.day} ${months[d.month - 1]}${sameYear ? '' : ' ${d.year}'}';
+  return S.dayMonth(d.day, d.month, year: sameYear ? null : d.year);
 }
 
 /// `18 Eylül 2026` — the pinned header date label.
 String formatFullDate(DateKey key) {
   final d = fromDateKey(key);
-  return '${d.day} ${months[d.month - 1]} ${d.year}';
+  return S.fullDate(d.day, d.month, d.year);
 }
 
 /// `bugün` / `dün` / `3 gün önce` / `2 hafta önce` / `5 ay önce`.
 String relativeLabel(int offset) {
-  if (offset == 0) return 'bugün';
-  if (offset == 1) return 'dün';
-  if (offset < 7) return '$offset gün önce';
-  if (offset < 60) return '${(offset / 7).round()} hafta önce';
-  return '${(offset / 30).round()} ay önce';
+  if (offset == 0) return S.relToday;
+  if (offset == 1) return S.relYesterday;
+  if (offset < 7) return S.relDaysAgo(offset);
+  if (offset < 60) return S.relWeeksAgo((offset / 7).round());
+  return S.relMonthsAgo((offset / 30).round());
 }
 
 /// Time from [now] until the next local midnight (never under a second).

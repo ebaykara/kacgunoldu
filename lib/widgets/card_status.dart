@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../domain/card.dart' show Tier;
 import '../domain/logic.dart';
+import '../l10n/strings.dart';
 
 /// The one line under a card's day count: where it stands against its
 /// rhythm, in words. It replaces the ring's tiny label and the date stamp —
@@ -15,12 +16,12 @@ class CardStatus {
   final bool urgent;
 
   factory CardStatus.of(DecoratedCard card) {
-    if (card.card.recs.isEmpty) return const CardStatus('Henüz işaretlenmedi');
+    if (card.card.recs.isEmpty) return CardStatus(S.notMarkedYet);
     final r = card.stats.remaining;
-    if (r == null) return const CardStatus('Ritim öğreniliyor');
-    if (r > 0) return CardStatus('$r gün kaldı');
-    if (r == 0) return const CardStatus('Bugün sırası', urgent: true);
-    return CardStatus('${-r} gün geçti', urgent: true);
+    if (r == null) return CardStatus(S.statusLearning);
+    if (r > 0) return CardStatus(S.statusDaysLeft(r));
+    if (r == 0) return CardStatus(S.statusDueToday, urgent: true);
+    return CardStatus(S.statusDaysOver(-r), urgent: true);
   }
 
   /// Colour against the tier's background: the accent when urgent (on the

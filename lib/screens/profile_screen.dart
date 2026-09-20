@@ -7,6 +7,7 @@ import '../domain/date.dart';
 import '../domain/insights.dart';
 import '../domain/logic.dart';
 import '../domain/text.dart';
+import '../l10n/strings.dart';
 import '../state/card_store.dart';
 import '../storage/repository.dart' show Profile;
 import '../theme/tokens.dart';
@@ -62,10 +63,10 @@ class ProfileScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         PageHeader(
-          title: 'Profil',
+          title: S.profileTitle,
           trailing: RoundIconButton(
             icon: Icons.settings_outlined,
-            label: 'Ayarlar',
+            label: S.settings,
             onTap: () =>
                 pushPage<void>(context, (_) => SettingsScreen(store: store)),
           ),
@@ -83,8 +84,8 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () => editProfile(context, store),
                 scale: 0.985,
                 semanticsLabel: profile.isEmpty
-                    ? 'Adını ekle'
-                    : '${profile.name}, profili düzenle',
+                    ? S.addYourName
+                    : S.editProfileSemantics(profile.name),
                 child: ExcludeSemantics(
                   child: Row(
                     children: [
@@ -121,7 +122,7 @@ class ProfileScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              profile.isEmpty ? 'Adını ekle' : profile.name,
+                              profile.isEmpty ? S.addYourName : profile.name,
                               style: ui(
                                 19,
                                 weight: FontWeight.w700,
@@ -133,8 +134,8 @@ class ProfileScreen extends StatelessWidget {
                               profile.handle.isNotEmpty
                                   ? '@${profile.handle}'
                                   : profile.isEmpty
-                                  ? 'Profilini kişiselleştirmek için dokun'
-                                  : 'Düzenlemek için dokun',
+                                  ? S.tapToPersonalise
+                                  : S.tapToEdit,
                               style: ui(13, color: AppColor.onSurfaceVariant),
                             ),
                           ],
@@ -153,20 +154,20 @@ class ProfileScreen extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _Stat(value: cards.length, label: 'Toplam kart'),
+                    child: _Stat(value: cards.length, label: S.statTotalCards),
                   ),
                   const SizedBox(width: Space.s12),
                   Expanded(
                     child: _Stat(
                       value: totalRecords(cards),
-                      label: 'Toplam kayıt',
+                      label: S.statTotalRecords,
                     ),
                   ),
                   const SizedBox(width: Space.s12),
                   Expanded(
                     child: _Stat(
                       value: newCardsThisMonth(cards, today),
-                      label: 'Bu ay yeni',
+                      label: S.statNewThisMonth,
                     ),
                   ),
                 ],
@@ -177,7 +178,7 @@ class ProfileScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Bu ayın özeti',
+                      S.monthSummary,
                       style: ui(
                         14,
                         weight: FontWeight.w700,
@@ -202,7 +203,7 @@ class ProfileScreen extends StatelessWidget {
                                   const SizedBox(width: Space.s8),
                                   Flexible(
                                     child: Text(
-                                      '$thisMonth kayıt yaptın',
+                                      S.recordsMade(thisMonth),
                                       style: ui(
                                         15,
                                         weight: FontWeight.w700,
@@ -215,7 +216,7 @@ class ProfileScreen extends StatelessWidget {
                               const SizedBox(height: Space.s6),
                               Text.rich(
                                 TextSpan(
-                                  text: 'Geçen aya göre ',
+                                  text: S.vsLastMonth,
                                   children: [
                                     TextSpan(
                                       text: delta > 0 ? '+$delta' : '$delta',
@@ -246,22 +247,22 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: Space.s12),
               _Insight(
                 icon: Icons.eco_outlined,
-                title: 'En düzenli yaptığın',
+                title: S.insightRegular,
                 card: regular?.card,
                 detail: regular == null
                     ? null
-                    : 'Ortalama ${regular.every} günde bir',
-                empty: 'Üç kayıttan sonra burada görünür.',
+                    : S.insightRegularDetail(regular.every),
+                empty: S.insightRegularEmpty,
                 store: store,
                 onOpen: (c) => _openCard(context, c),
               ),
               const SizedBox(height: Space.s12),
               _Insight(
                 icon: Icons.hourglass_bottom_rounded,
-                title: 'En uzun süredir yapmadığın',
+                title: S.insightNeglected,
                 card: neglected?.card,
-                detail: neglected == null ? null : '${neglected.days} gün',
-                empty: 'Henüz kayıt yok.',
+                detail: neglected == null ? null : S.nDays(neglected.days),
+                empty: S.insightNeglectedEmpty,
                 store: store,
                 onOpen: (c) => _openCard(context, c),
               ),
@@ -364,16 +365,16 @@ class _ProfileFormState extends State<_ProfileForm> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Profil',
+          S.profileTitle,
           style: display(26, color: AppColor.onSurface, height: 1.14),
         ),
         const SizedBox(height: Space.s16),
-        _field('Adın', _name, 'Adını yaz'),
+        _field(S.fieldName, _name, S.fieldNameHint),
         const SizedBox(height: Space.s14),
-        _field('Kullanıcı adı', _handle, 'isteğe bağlı', prefix: '@'),
+        _field(S.fieldHandle, _handle, S.fieldHandleHint, prefix: '@'),
         const SizedBox(height: Space.s18),
         PrimaryButton(
-          label: 'Kaydet',
+          label: S.save,
           onTap: () =>
               widget.onSave(Profile(name: _name.text, handle: _handle.text)),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 
@@ -108,7 +109,7 @@ class _AppSnackbarState extends State<AppSnackbar> with SingleTickerProviderStat
                   const SizedBox(width: Space.s12),
                   Semantics(
                     button: true,
-                    label: 'Geri al',
+                    label: S.undo,
                     child: GestureDetector(
                       onTap: widget.onUndo,
                       behavior: HitTestBehavior.opaque,
@@ -118,7 +119,7 @@ class _AppSnackbarState extends State<AppSnackbar> with SingleTickerProviderStat
                           horizontal: Space.s14,
                         ),
                         child: Text(
-                          'Geri al',
+                          S.undo,
                           style: ui(13, weight: FontWeight.w700, color: AppColor.inverseAccent),
                         ),
                       ),

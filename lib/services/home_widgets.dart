@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../domain/card.dart';
 import '../domain/date.dart';
 import '../domain/logic.dart';
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../widgets/card_glyph.dart' show iconKeyOf;
 
@@ -173,6 +174,11 @@ String widgetSnapshot(List<Card> cards, DateKey today, {bool doneButton = true})
   return jsonEncode({
     'v': widgetSnapshotVersion,
     'doneButton': doneButton,
+    // The widgets draw their own status lines (they count the days
+    // themselves), so the wording travels with the snapshot: `{n}` is the
+    // number they work out. See `widget/WidgetSnapshot.kt` and
+    // `KacGunOlduWidget/WidgetSnapshot.swift`.
+    'strings': S.widgetStrings,
     'theme': {
       'dark': AppColor.current.isDark,
       'surface': c(AppColor.surface),

@@ -8,6 +8,7 @@ import '../domain/frequency.dart';
 import '../domain/logic.dart';
 import '../domain/share.dart';
 import '../domain/text.dart';
+import '../l10n/strings.dart';
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
@@ -107,22 +108,22 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                     icon: card.notify
                         ? Icons.notifications_off_outlined
                         : Icons.notifications_active_outlined,
-                    label: card.notify ? 'Hatırlatmayı kapat' : 'Bana hatırlat',
+                    label: card.notify ? S.menuTurnOffReminder : S.menuRemindMe,
                     detail: card.notify
-                        ? 'Bu kart için bildirim gelmiyor olacak'
-                        : 'Sırası gelince bildirim gönder',
+                        ? S.menuReminderOffDetail
+                        : S.menuReminderOnDetail,
                     onTap: () async {
                       Navigator.of(sheetContext).pop();
                       final on = !card.notify;
                       if (await _store.setCardNotify(card.id, on) && on) {
-                        _store.toast('Hatırlatma açıldı');
+                        _store.toast(S.toastReminderOn);
                       }
                     },
                   ),
                   ActionRow(
                     icon: Icons.edit_outlined,
-                    label: 'Düzenle',
-                    detail: 'Ad, simge ve sıklık',
+                    label: S.menuEdit,
+                    detail: S.menuEditDetail,
                     onTap: () {
                       Navigator.of(sheetContext).pop();
                       pushPage<void>(
@@ -134,8 +135,8 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                   ),
                   ActionRow(
                     icon: Icons.event_available_outlined,
-                    label: 'Başka bir gün ekle',
-                    detail: 'Geçmişe kayıt ekle',
+                    label: S.menuAddDay,
+                    detail: S.menuAddDayDetail,
                     onTap: () {
                       Navigator.of(sheetContext).pop();
                       _pickDay();
@@ -143,8 +144,8 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                   ),
                   ActionRow(
                     icon: Icons.widgets_outlined,
-                    label: 'Ana ekrana ekle',
-                    detail: 'Bu kartı widget olarak göster',
+                    label: S.menuAddToHome,
+                    detail: S.menuAddToHomeDetail,
                     onTap: () {
                       Navigator.of(sheetContext).pop();
                       if (_store.canPinWidget) {
@@ -156,8 +157,8 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                   ),
                   ActionRow(
                     icon: Icons.ios_share_rounded,
-                    label: 'Paylaş',
-                    detail: 'Kartın bir kopyasını birine gönder',
+                    label: S.menuShare,
+                    detail: S.menuShareDetail,
                     onTap: () {
                       Navigator.of(sheetContext).pop();
                       SharePlus.instance.share(
@@ -172,10 +173,10 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                     icon: card.archived
                         ? Icons.unarchive_outlined
                         : Icons.archive_outlined,
-                    label: card.archived ? 'Arşivden çıkar' : 'Arşivle',
+                    label: card.archived ? S.menuUnarchive : S.menuArchive,
                     detail: card.archived
-                        ? 'Kartlarının arasına geri döner'
-                        : 'Kayıtlar kalır; listeden kalkar, hatırlatılmaz',
+                        ? S.menuUnarchiveDetail
+                        : S.menuArchiveDetail,
                     onTap: () {
                       Navigator.of(sheetContext).pop();
                       _store.setArchived(card.id, !card.archived);
@@ -184,8 +185,8 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                   ),
                   ActionRow(
                     icon: Icons.delete_outline_rounded,
-                    label: 'Kartı sil',
-                    detail: 'Bütün kayıtlarıyla birlikte',
+                    label: S.menuDeleteCard,
+                    detail: S.menuDeleteCardDetail,
                     destructive: true,
                     onTap: () => _confirmDelete(sheetContext, card),
                   ),
@@ -204,11 +205,10 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
     if (!_reduceMotion) HapticFeedback.mediumImpact();
     final confirmed = await confirmDestructive(
       sheetContext,
-      title: '“${card.name}” silinsin mi?',
-      message:
-          'Bu kartın bütün kayıtları kalıcı olarak silinir. Bu işlem geri alınamaz.',
-      confirmLabel: 'Sil',
-      cancelLabel: 'Vazgeç',
+      title: S.confirmDeleteCardTitle(card.name),
+      message: S.confirmDeleteCardMessage,
+      confirmLabel: S.delete,
+      cancelLabel: S.cancel,
     );
     if (!confirmed) return;
     if (sheetContext.mounted) Navigator.of(sheetContext).pop();
@@ -225,7 +225,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(upperTr('Kayıt'), style: overline(color: AppColor.outline)),
+          Text(upperTr(S.recordOverline), style: overline(color: AppColor.outline)),
           const SizedBox(height: Space.s6),
           Text(
             formatFullDate(key),
@@ -249,8 +249,8 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
           const SizedBox(height: Space.s14),
           ActionRow(
             icon: Icons.sticky_note_2_outlined,
-            label: card.notes[key] == null ? 'Not ekle' : 'Notu düzenle',
-            detail: 'Örn. kilometre, ne yapıldığı',
+            label: card.notes[key] == null ? S.addNote : S.editNote,
+            detail: S.noteDetail,
             onTap: () {
               Navigator.of(sheetContext).pop();
               _editNote(card, key);
@@ -258,17 +258,17 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
           ),
           ActionRow(
             icon: Icons.edit_calendar_outlined,
-            label: 'Tarihi değiştir',
-            detail: 'Bu kaydı başka bir güne taşı',
+            label: S.changeDate,
+            detail: S.changeDateDetail,
             onTap: () async {
               final picked = await showDatePicker(
                 context: sheetContext,
                 initialDate: fromDateKey(key),
                 firstDate: DateTime(fromDateKey(today).year - 30),
                 lastDate: fromDateKey(today),
-                helpText: 'Yeni tarih',
-                cancelText: 'Vazgeç',
-                confirmText: 'Taşı',
+                helpText: S.newDate,
+                cancelText: S.cancel,
+                confirmText: S.move,
               );
               if (picked == null) return;
               if (sheetContext.mounted) Navigator.of(sheetContext).pop();
@@ -277,8 +277,8 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
           ),
           ActionRow(
             icon: Icons.delete_outline_rounded,
-            label: 'Bu kaydı sil',
-            detail: 'Geri alabilirsin',
+            label: S.deleteRecord,
+            detail: S.deleteRecordDetail,
             destructive: true,
             onTap: () {
               Navigator.of(sheetContext).pop();
@@ -366,13 +366,13 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
               children: [
                 RoundIconButton(
                   icon: Icons.arrow_back_rounded,
-                  label: 'Geri',
+                  label: S.back,
                   onTap: () => Navigator.of(context).maybePop(),
                 ),
                 const Spacer(),
                 RoundIconButton(
                   icon: Icons.more_horiz_rounded,
-                  label: 'Kart seçenekleri',
+                  label: S.cardOptions,
                   onTap: () => _openMenu(card),
                 ),
               ],
@@ -438,7 +438,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                     const SizedBox(width: Space.s8),
                     Expanded(
                       child: Text(
-                        'Bu kart arşivde',
+                        S.archivedBanner,
                         style: ui(
                           13,
                           weight: FontWeight.w600,
@@ -449,7 +449,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                     TextButton(
                       onPressed: () => _store.setArchived(card.id, false),
                       child: Text(
-                        'Arşivden çıkar',
+                        S.menuUnarchive,
                         style: ui(
                           13,
                           weight: FontWeight.w700,
@@ -487,8 +487,8 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                             ),
                           Semantics(
                             label: hasRecs
-                                ? '${stats.days} gün oldu'
-                                : 'henüz kayıt yok',
+                                ? S.daysSinceSemantics(stats.days)
+                                : S.noRecordYetLower,
                             child: ExcludeSemantics(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -514,10 +514,10 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                                   const SizedBox(height: Space.s12),
                                   Text(
                                     !hasRecs
-                                        ? 'henüz kayıt yok'
+                                        ? S.noRecordYetLower
                                         : doneToday
-                                        ? 'bugün yaptın'
-                                        : 'gün oldu',
+                                        ? S.didItTodayLower
+                                        : S.unitDaysSince,
                                     style: ui(
                                       13,
                                       weight: FontWeight.w600,
@@ -566,7 +566,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                   children: [
                     Expanded(
                       child: _Fact(
-                        label: 'Son kayıt',
+                        label: S.factLastRecord,
                         value: hasRecs ? formatFullDate(card.recs.first) : '—',
                       ),
                     ),
@@ -577,11 +577,11 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                     ),
                     Expanded(
                       child: _Fact(
-                        label: card.every != null ? 'Hedef' : 'Ortalama',
+                        label: card.every != null ? S.factGoal : S.factAverage,
                         value: card.every != null
                             ? frequencyLabel(card.every!)
                             : avg != null
-                            ? '$avg gün'
+                            ? S.nDays(avg)
                             : '—',
                       ),
                     ),
@@ -598,7 +598,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                 right: Space.s22,
               ),
               child: Text(
-                'Gerçekte ortalama $avg günde bir yapıyorsun.',
+                S.actualAverage(avg),
                 style: ui(12, color: AppColor.onSurfaceVariant),
               ),
             ),
@@ -607,19 +607,19 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
             padding: const EdgeInsets.symmetric(horizontal: Space.s18),
             child: doneToday
                 ? PrimaryButton(
-                    label: 'Bugün işaretlendi',
+                    label: S.markedToday,
                     icon: Icons.check_rounded,
                     tonal: true,
                     onTap: null,
                   )
                 : PrimaryButton(
-                    label: 'Bugün yaptım',
+                    label: S.didItToday,
                     icon: Icons.check_rounded,
                     onTap: _recordToday,
                   ),
           ),
           QuietButton(
-            label: 'Başka bir gün seç',
+            label: S.pickAnotherDay,
             icon: Icons.calendar_month_outlined,
             onTap: _pickDay,
           ),
@@ -633,7 +633,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SectionTitle('Aralıklar'),
+                  SectionTitle(S.sectionGaps),
                   Panel(
                     child: GapChart(gaps: gaps, typical: stats.typical),
                   ),
@@ -647,10 +647,10 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SectionTitle(
-                  'Geçmiş',
+                  S.sectionHistory,
                   trailing: hasRecs
                       ? Text(
-                          '${card.recs.length} kayıt',
+                          S.nRecords(card.recs.length),
                           style: ui(
                             12.5,
                             weight: FontWeight.w600,
@@ -662,7 +662,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                 if (!hasRecs)
                   Panel(
                     child: Text(
-                      'Henüz kayıt yok. Yaptığında yukarıdaki düğmeyle işaretle.',
+                      S.historyEmpty,
                       style: ui(
                         13,
                         color: AppColor.onSurfaceVariant,
@@ -699,9 +699,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                   ),
                 if (card.recs.length > _historyPreview)
                   QuietButton(
-                    label: _showAll
-                        ? 'Daha az göster'
-                        : 'Tümünü göster (${card.recs.length})',
+                    label: _showAll ? S.showLess : S.showAll(card.recs.length),
                     onTap: () => setState(() => _showAll = !_showAll),
                   ),
               ],
@@ -767,9 +765,7 @@ class _HistoryRow extends StatelessWidget {
     return PressScale(
       onTap: onTap,
       scale: 0.985,
-      semanticsLabel:
-          '${formatFullDate(dateKey)}${gap != null ? ', $gap gün arayla' : ''}'
-          '${note != null ? ', not: $note' : ''}',
+      semanticsLabel: S.historySemantics(formatFullDate(dateKey), gap, note),
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: Space.s16,
@@ -821,7 +817,7 @@ class _HistoryRow extends StatelessWidget {
               ),
               if (gap != null)
                 Text(
-                  '$gap gün arayla',
+                  S.gapApart(gap!),
                   style: ui(
                     12,
                     weight: FontWeight.w500,
@@ -830,7 +826,7 @@ class _HistoryRow extends StatelessWidget {
                 )
               else
                 Text(
-                  'ilk kayıt',
+                  S.firstRecord,
                   style: ui(
                     12,
                     weight: FontWeight.w500,

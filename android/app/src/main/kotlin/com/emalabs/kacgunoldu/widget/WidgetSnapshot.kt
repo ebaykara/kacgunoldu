@@ -21,6 +21,8 @@ internal class WidgetSnapshot(
     val theme: ThemeColors,
     /** Show the "Bugün yaptım" button (Ayarlar → Ana ekran widget'ı). */
     val doneButton: Boolean,
+    /** The app's wording, in the language it is set to. */
+    val strings: WidgetStrings,
     private val tiers: Map<Tier, TierColors>,
     cards: List<WidgetCard>,
 ) {
@@ -109,6 +111,7 @@ internal class WidgetSnapshot(
                 primary = t.color("primary"),
                 onPrimary = t.color("onPrimary"),
             )
+            val strings = WidgetStrings.parse(o.optJSONObject("strings"))
             val tierJson = o.getJSONObject("tiers")
             val tiers = Tier.values().associateWith { tier ->
                 val c = tierJson.getJSONObject(tier.key)
@@ -126,12 +129,49 @@ internal class WidgetSnapshot(
                     last = if (c.isNull("last")) null else runCatching { LocalDate.parse(c.getString("last")) }.getOrNull(),
                     typical = if (c.isNull("typical")) null else c.optInt("typical").takeIf { it > 0 },
                     today = today,
+                    strings = strings,
                 )
             }
-            return WidgetSnapshot(theme, o.optBoolean("doneButton", true), tiers, cards)
+            return WidgetSnapshot(theme, o.optBoolean("doneButton", true), strings, tiers, cards)
         }
 
         private fun JSONObject.color(key: String): Int = getLong(key).toInt()
+    }
+}
+
+/**
+ * The text the widgets draw, as the app last published it
+ * (`Strings.widgetStrings` in lib/l10n). `{n}` is the number this side works
+ * out. The fallbacks are the Turkish originals, for a widget placed before
+ * the app has ever run.
+ */
+internal class WidgetStrings(private val map: Map<String, String>) {
+    private fun s(key: String, fallback: String) = map[key]?.takeIf { it.isNotEmpty() } ?: fallback
+    private fun fmt(key: String, fallback: String, value: Int) = s(key, fallback).replace("{n}", value.toString())
+
+    val title: String get() = s("title", "Kaç gün oldu?")
+    fun late(n: Int): String = fmt("late", "{n} kart gecikti", n)
+    val notMarked: String get() = s("notMarked", "Henüz işaretlenmedi")
+    val learning: String get() = s("learning", "Ritim öğreniliyor")
+    fun daysLeft(n: Int): String = fmt("daysLeft", "{n} gün kaldı", n)
+    val dueToday: String get() = s("dueToday", "Bugün sırası")
+    fun daysOver(n: Int): String = fmt("daysOver", "{n} gün geçti", n)
+    val unitDays: String get() = s("unitDays", "gün oldu")
+    val unitNone: String get() = s("unitNone", "kayıt yok")
+    val doneToday: String get() = s("doneToday", "Bugün yapıldı")
+    val markDone: String get() = s("markDone", "Bugün yaptım")
+    val firstCard: String get() = s("firstCard", "İlk kartını oluştur")
+    val openApp: String get() = s("openApp", "Kartlarını görmek için uygulamayı aç")
+
+    companion object {
+        val DEFAULT = WidgetStrings(emptyMap())
+
+        fun parse(o: JSONObject?): WidgetStrings {
+            if (o == null) return DEFAULT
+            val map = HashMap<String, String>()
+            for (key in o.keys()) o.optString(key).let { if (it.isNotEmpty()) map[key] = it }
+            return WidgetStrings(map)
+        }
     }
 }
 
@@ -174,6 +214,7 @@ internal class WidgetCard(
     val last: LocalDate?,
     val typical: Int?,
     today: LocalDate,
+    strings: WidgetStrings = WidgetStrings.DEFAULT,
 ) {
     val days: Int = last?.let { ChronoUnit.DAYS.between(it, today).toInt().coerceAtLeast(0) } ?: 0
 
@@ -201,11 +242,11 @@ internal class WidgetCard(
 
     /** The card's one status line — `CardStatus` in lib/widgets/card_status.dart. */
     val status: String = when {
-        last == null -> "Henüz işaretlenmedi"
-        remaining == null -> "Ritim öğreniliyor"
-        remaining > 0 -> "$remaining gün kaldı"
-        remaining == 0 -> "Bugün sırası"
-        else -> "${-remaining} gün geçti"
+        last == null -> strings.notMarked
+        remaining == null -> strings.learning
+        remaining > 0 -> strings.daysLeft(remaining)
+        remaining == 0 -> strings.dueToday
+        else -> strings.daysOver(-remaining)
     }
 
     /** Due today or past due: drawn in the accent, bold. */
@@ -216,5 +257,5 @@ internal class WidgetCard(
 
     /** The big number, or a dash when nothing is recorded yet. */
     val dayText: String = if (last == null) "—" else days.toString()
-    val unitText: String = if (last == null) "kayıt yok" else "gün oldu"
+    val unitText: String = if (last == null) strings.unitNone else strings.unitDays
 }

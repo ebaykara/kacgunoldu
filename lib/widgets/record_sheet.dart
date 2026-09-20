@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../domain/date.dart';
 import '../domain/logic.dart';
 import '../domain/text.dart';
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 import 'ui.dart';
@@ -40,9 +41,9 @@ class RecordSheet extends StatelessWidget {
       initialDate: now,
       firstDate: DateTime(now.year - 30),
       lastDate: now,
-      helpText: 'Ne zaman yaptın?',
-      cancelText: 'Vazgeç',
-      confirmText: 'Seç',
+      helpText: S.whenDidYouDoIt,
+      cancelText: S.cancel,
+      confirmText: S.select,
     );
     if (picked == null) return;
     onPick(daysSince(toDateKey(picked), today));
@@ -54,10 +55,10 @@ class RecordSheet extends StatelessWidget {
       return (
         offset: o,
         label: o == 0
-            ? 'Bugün'
+            ? S.today
             : o == 1
-                ? 'Dün'
-                : '2 gün önce',
+                ? S.yesterday
+                : S.twoDaysAgo,
         sub: formatDayMonth(shiftDays(today, -o), today),
       );
     }).toList();
@@ -74,7 +75,7 @@ class RecordSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          upperTr('Ne zaman yaptın?'),
+          upperTr(S.whenDidYouDoIt),
           style: overline(color: AppColor.outline),
         ),
         if (card != null) ...[
@@ -134,7 +135,7 @@ class RecordSheet extends StatelessWidget {
         ),
         const SizedBox(height: Space.s18),
         Text(
-          upperTr('Daha geriden seç'),
+          upperTr(S.pickEarlier),
           style: overline(color: AppColor.outline),
         ),
         const SizedBox(height: 10),
@@ -153,7 +154,7 @@ class RecordSheet extends StatelessWidget {
                     child: _PressTile(
                       onTap: () => onPick(c.offset),
                       pressedScale: 0.94,
-                      semanticsLabel: '${c.offset} gün önce, ${c.dow} ${c.dom}',
+                      semanticsLabel: S.daysAgoOn(c.offset, c.dow, '${c.dom}'),
                       color: selectedOffset == c.offset
                           ? AppColor.primaryContainer
                           : AppColor.surfaceContainer,
@@ -187,7 +188,7 @@ class RecordSheet extends StatelessWidget {
           children: [
             Expanded(
               child: QuietButton(
-                label: 'Takvimden seç',
+                label: S.pickFromCalendar,
                 icon: Icons.calendar_month_outlined,
                 onTap: () => _pickFromCalendar(context),
               ),
@@ -195,7 +196,7 @@ class RecordSheet extends StatelessWidget {
             if (onNotYet != null)
               Expanded(
                 child: QuietButton(
-                  label: 'Henüz yapmadım',
+                  label: S.notYetDone,
                   icon: Icons.hourglass_empty_rounded,
                   onTap: onNotYet!,
                 ),

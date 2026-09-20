@@ -8,6 +8,7 @@ const _cardsKey = 'nezaman.cards.v1';
 const _orderKey = 'nezaman.order.v1';
 const _profileKey = 'nezaman.profile.v1';
 const _themeKey = 'nezaman.theme.v1';
+const _langKey = 'nezaman.lang.v1';
 const _reminderTimeKey = 'nezaman.remindertime.v1';
 const _layoutKey = 'nezaman.layout.v1';
 const _widgetDoneKey = 'nezaman.widgetdone.v1';
@@ -146,6 +147,25 @@ class CardRepository {
     try {
       final prefs = await _prefs;
       await prefs.setString(_themeKey, id);
+    } catch (_) {
+      // Best-effort, same as saveCards.
+    }
+  }
+
+  /// The chosen interface language's id; `null` follows the phone.
+  Future<String?> loadLangId() async {
+    try {
+      final prefs = await _prefs;
+      return prefs.getString(_langKey);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> saveLangId(String id) async {
+    try {
+      final prefs = await _prefs;
+      await prefs.setString(_langKey, id);
     } catch (_) {
       // Best-effort, same as saveCards.
     }

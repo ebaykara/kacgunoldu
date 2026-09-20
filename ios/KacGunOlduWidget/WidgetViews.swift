@@ -59,7 +59,7 @@ struct DoneButton: View {
     }
     .buttonStyle(.plain)
     .disabled(card.doneToday)
-    .accessibilityLabel(card.doneToday ? "Bugün yapıldı" : "Bugün yaptım")
+    .accessibilityLabel(card.doneToday ? card.strings.doneToday : card.strings.markDone)
   }
 }
 
@@ -169,13 +169,13 @@ struct CardListView: View {
     let late = cards.filter(\.isLate).count
     VStack(alignment: .leading, spacing: 8) {
       HStack(alignment: .center) {
-        Text("Kaç gün oldu?")
+        Text(snapshot.strings.title)
           .font(serif(21))
           .foregroundStyle(theme.onSurface)
           .lineLimit(1)
         Spacer(minLength: 6)
         if late > 0 {
-          Text("\(late) kart gecikti")
+          Text(snapshot.strings.late(late))
             .font(.system(size: 11, weight: .bold))
             .foregroundStyle(theme.onPrimary)
             .lineLimit(1)
@@ -274,11 +274,12 @@ struct CellView: View {
 struct EmptyStateView: View {
   let theme: ThemeColors
   let hasSnapshot: Bool
+  var strings: WidgetStrings = .default
 
   var body: some View {
     VStack(spacing: 8) {
       glyph("spark").resizable().scaledToFit().frame(width: 24, height: 24).foregroundStyle(theme.primary)
-      Text(hasSnapshot ? "İlk kartını oluştur" : "Kartlarını görmek için uygulamayı aç")
+      Text(hasSnapshot ? strings.firstCard : strings.openApp)
         .font(.system(size: 13, weight: .semibold))
         .foregroundStyle(theme.onSurface)
         .multilineTextAlignment(.center)

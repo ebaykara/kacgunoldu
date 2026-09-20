@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Card;
 
 import '../domain/card.dart';
 import '../domain/icon_guess.dart';
+import '../l10n/strings.dart';
 
 /// Every glyph a card can wear, in the order the picker shows them.
 ///
@@ -36,35 +37,8 @@ const cardGlyphs = <String, IconData?>{
   'spark': Icons.auto_awesome_outlined,
 };
 
-/// Screen-reader names for the picker.
-const glyphLabels = <String, String>{
-  'gym': 'spor',
-  'swim': 'yüzme',
-  'run': 'koşu',
-  'bike': 'bisiklet',
-  'bed': 'yatak',
-  'scissors': 'makas',
-  'tooth': 'diş',
-  'doctor': 'doktor',
-  'pill': 'ilaç',
-  'plant': 'bitki',
-  'fridge': 'buzdolabı',
-  'clean': 'temizlik',
-  'laundry': 'çamaşır',
-  'bath': 'banyo',
-  'phone': 'telefon',
-  'car': 'araba',
-  'book': 'kitap',
-  'pet': 'evcil hayvan',
-  'cart': 'alışveriş',
-  'coffee': 'kahve',
-  'music': 'müzik',
-  'money': 'para',
-  'mail': 'posta',
-  'heart': 'kalp',
-  'home': 'ev',
-  'spark': 'yıldız',
-};
+/// Screen-reader names for the picker, in the interface's language.
+Map<String, String> get glyphLabels => S.glyphLabels;
 
 /// The glyph key a card actually shows: the picked one, or a guess.
 String iconKeyOf(Card card) {

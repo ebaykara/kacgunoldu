@@ -9,6 +9,7 @@ import '../domain/icon_guess.dart';
 import '../domain/logic.dart';
 import '../domain/reminders.dart';
 import '../domain/templates.dart';
+import '../l10n/strings.dart';
 import '../state/card_store.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
@@ -107,7 +108,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
     if (granted) {
       setState(() => _notify = true);
     } else {
-      widget.store.toast('Bildirim izni kapalı. Telefon ayarlarından açabilirsin.');
+      widget.store.toast(S.notifyPermissionOff);
     }
   }
 
@@ -117,9 +118,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
     final existing = _editing ? store.byId(widget.editCardId!) : null;
     final hasRhythm = _every != null ||
         (existing != null && statsFor(existing, store.today).typical != null);
-    return hasRhythm
-        ? 'Sırası gelince saat $time civarı haber veririm.'
-        : 'Ritmini öğrenince haber veririm (3 kayıttan sonra) ya da bir sıklık seç.';
+    return hasRhythm ? S.notifyHintRhythm(time) : S.notifyHintNoRhythm;
   }
 
   String _timeLabel() {
@@ -139,9 +138,9 @@ class _CardFormScreenState extends State<CardFormScreen> {
       initialTime: r == null
           ? TimeOfDay(hour: store.reminderHour, minute: store.reminderMinute)
           : TimeOfDay(hour: r ~/ 60, minute: r % 60),
-      helpText: 'Bu kartın hatırlatma saati',
-      cancelText: 'Vazgeç',
-      confirmText: 'Tamam',
+      helpText: S.cardReminderTime,
+      cancelText: S.cancel,
+      confirmText: S.ok,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
         child: child!,
@@ -190,9 +189,9 @@ class _CardFormScreenState extends State<CardFormScreen> {
 
   String _dateLabel() {
     final o = _offset;
-    if (o == null) return 'Henüz yapmadım';
-    if (o == 0) return 'Bugün';
-    if (o == 1) return 'Dün';
+    if (o == null) return S.notYetDone;
+    if (o == 0) return S.today;
+    if (o == 1) return S.yesterday;
     final today = widget.store.today;
     return '${relativeLabel(o)} · ${formatDayMonth(shiftDays(today, -o), today)}';
   }
@@ -228,7 +227,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Simge seç',
+            S.pickIcon,
             style: display(26, color: AppColor.onSurface, height: 1.14),
           ),
           const SizedBox(height: Space.s14),
@@ -264,7 +263,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
 
     final page = Column(
       children: [
-        PageHeader(title: _editing ? 'Kartı düzenle' : 'Yeni kart'),
+        PageHeader(title: _editing ? S.editCardTitle : S.newCard),
         Expanded(
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
@@ -277,7 +276,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const _Label('Ne yaptın?'),
+                _Label(S.whatDidYouDo),
                 AnimatedContainer(
                   duration: Motion.hover,
                   decoration: BoxDecoration(
@@ -318,7 +317,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                             contentPadding: const EdgeInsets.symmetric(
                               vertical: Space.s16,
                             ),
-                            hintText: 'Örn. Saçımı kestirdim',
+                            hintText: S.namePlaceholder,
                             hintStyle: ui(
                               15,
                               weight: FontWeight.w500,
@@ -331,7 +330,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                       PressScale(
                         onTap: _pickIcon,
                         scale: 0.9,
-                        semanticsLabel: 'Simge seç',
+                        semanticsLabel: S.pickIcon,
                         child: Container(
                           width: 44,
                           height: 44,
@@ -356,11 +355,11 @@ class _CardFormScreenState extends State<CardFormScreen> {
                 ],
                 if (!_editing) ...[
                   const SizedBox(height: Space.s22),
-                  const _Label('Ne zaman yaptın?'),
+                  _Label(S.whenDidYouDoIt),
                   PressScale(
                     onTap: _pickDate,
                     scale: 0.985,
-                    semanticsLabel: 'Ne zaman yaptın? ${_dateLabel()}',
+                    semanticsLabel: '${S.whenDidYouDoIt} ${_dateLabel()}',
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: Space.s16,
@@ -404,7 +403,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                   ),
                 ],
                 const SizedBox(height: Space.s22),
-                const _Label('Ne sıklıkla tekrarlıyorsun?'),
+                _Label(S.howOften),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final w = math.max(
@@ -430,8 +429,8 @@ class _CardFormScreenState extends State<CardFormScreen> {
                           width: w,
                           child: _Chip(
                             label: customSelected
-                                ? '$_every günde bir'
-                                : 'Özel',
+                                ? S.everyNDays(_every!)
+                                : S.customFrequency,
                             selected: customSelected,
                             onTap: _pickCustom,
                           ),
@@ -456,8 +455,8 @@ class _CardFormScreenState extends State<CardFormScreen> {
                     Expanded(
                       child: Text(
                         _every == null
-                            ? 'Seçmezsen ritmini kayıtlarından kendim öğrenirim.'
-                            : '${frequencyLabel(_every!)} demek: bu aralık belirgin şekilde aşılınca kart “gecikti” olur.',
+                            ? S.frequencyHintNone
+                            : S.frequencyHint(frequencyLabel(_every!)),
                         style: ui(
                           12.5,
                           color: AppColor.onSurfaceVariant,
@@ -490,7 +489,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Bana hatırlat',
+                                  S.remindMe,
                                   style: ui(
                                     14,
                                     weight: FontWeight.w700,
@@ -510,7 +509,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                             ),
                           ),
                           Semantics(
-                            label: 'Bana hatırlat',
+                            label: S.remindMe,
                             toggled: _notify,
                             child: Switch(
                               value: _notify,
@@ -536,7 +535,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                         PressScale(
                           onTap: _pickTime,
                           scale: 0.985,
-                          semanticsLabel: 'Hatırlatma saati ${_timeLabel()}',
+                          semanticsLabel: S.reminderTimeSemantics(_timeLabel()),
                           child: Padding(
                             padding: const EdgeInsets.only(top: Space.s12),
                             child: ExcludeSemantics(
@@ -551,8 +550,8 @@ class _CardFormScreenState extends State<CardFormScreen> {
                                   Expanded(
                                     child: Text(
                                       _remindAt == null
-                                          ? 'Saat (genel ayar)'
-                                          : 'Bu kartın saati',
+                                          ? S.timeGlobal
+                                          : S.timeThisCard,
                                       style: ui(
                                         13.5,
                                         weight: FontWeight.w600,
@@ -579,7 +578,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                             child: TextButton(
                               onPressed: () => setState(() => _remindAt = null),
                               child: Text(
-                                'Genel saate dön',
+                                S.backToGlobalTime,
                                 style: ui(
                                   12.5,
                                   weight: FontWeight.w600,
@@ -601,7 +600,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                       PressScale(
                         onTap: () => setState(() => _advanced = !_advanced),
                         scale: 0.99,
-                        semanticsLabel: 'Gelişmiş seçenekler',
+                        semanticsLabel: S.advancedOptions,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: Space.s16,
@@ -612,7 +611,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'Gelişmiş seçenekler',
+                                    S.advancedOptions,
                                     style: ui(
                                       14,
                                       weight: FontWeight.w600,
@@ -650,7 +649,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     Text(
-                                      'Simge',
+                                      S.iconLabel,
                                       style: ui(
                                         12.5,
                                         weight: FontWeight.w700,
@@ -674,7 +673,7 @@ class _CardFormScreenState extends State<CardFormScreen> {
                 ),
                 const SizedBox(height: Space.s22),
                 PrimaryButton(
-                  label: _editing ? 'Kaydet' : 'Kartı oluştur',
+                  label: _editing ? S.save : S.createCard,
                   enabled: _valid,
                   onTap: _submit,
                 ),
@@ -822,7 +821,7 @@ class IconGrid extends StatelessWidget {
                             size: 16,
                           ),
                           Text(
-                            'oto',
+                            S.autoShort,
                             style: ui(
                               9,
                               weight: FontWeight.w700,
@@ -852,7 +851,7 @@ class IconGrid extends StatelessWidget {
             cell(
               iconKey: guessed,
               on: selected == null,
-              label: 'Otomatik simge',
+              label: S.autoIcon,
               onTap: () => onPick(null),
               auto: true,
             ),
@@ -914,7 +913,7 @@ class _CustomFrequencyState extends State<_CustomFrequency> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Kaç günde bir?',
+          S.everyHowManyDays,
           style: display(26, color: AppColor.onSurface, height: 1.14),
         ),
         const SizedBox(height: Space.s16),
@@ -922,7 +921,7 @@ class _CustomFrequencyState extends State<_CustomFrequency> {
           children: [
             RoundIconButton(
               icon: Icons.remove_rounded,
-              label: 'Azalt',
+              label: S.decrease,
               background: AppColor.surfaceContainer,
               onTap: () => _set(_days - 1),
             ),
@@ -943,14 +942,14 @@ class _CustomFrequencyState extends State<_CustomFrequency> {
             ),
             RoundIconButton(
               icon: Icons.add_rounded,
-              label: 'Artır',
+              label: S.increase,
               background: AppColor.surfaceContainer,
               onTap: () => _set(_days + 1),
             ),
           ],
         ),
         Text(
-          'günde bir',
+          S.dayIntervalUnit,
           textAlign: TextAlign.center,
           style: ui(
             13,
@@ -967,7 +966,7 @@ class _CustomFrequencyState extends State<_CustomFrequency> {
             for (final d in const [4, 5, 10, 21, 45, 120])
               PressScale(
                 onTap: () => _set(d),
-                semanticsLabel: '$d gün',
+                semanticsLabel: S.nDays(d),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: Space.s14,
@@ -980,7 +979,7 @@ class _CustomFrequencyState extends State<_CustomFrequency> {
                     borderRadius: BorderRadius.circular(Radii.pill),
                   ),
                   child: Text(
-                    '$d gün',
+                    S.nDays(d),
                     style: ui(
                       12.5,
                       weight: FontWeight.w600,
@@ -993,7 +992,7 @@ class _CustomFrequencyState extends State<_CustomFrequency> {
         ),
         const SizedBox(height: Space.s18),
         PrimaryButton(
-          label: 'Tamam',
+          label: S.ok,
           enabled: valid,
           onTap: () => widget.onDone(_days),
         ),
@@ -1017,7 +1016,7 @@ class _Templates extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 2, bottom: Space.s8),
           child: Text(
-            'Hazır kartlar',
+            S.readyMadeCards,
             style: ui(
               12.5,
               weight: FontWeight.w700,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide Card;
 
 import '../domain/card.dart';
 import '../domain/date.dart';
+import '../l10n/strings.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 
@@ -35,9 +36,7 @@ class GapChart extends StatelessWidget {
     final top = math.max(gaps.fold<int>(1, math.max), typical ?? 0);
     final t = typical;
     return Semantics(
-      label:
-          'Kayıtlar arası aralıklar: ${gaps.join(', ')} gün'
-          '${t != null ? '. Ritim $t gün' : ''}',
+      label: S.gapsSemantics(gaps, t),
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -61,7 +60,7 @@ class GapChart extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'en eski',
+                  S.gapOldest,
                   style: ui(
                     11,
                     weight: FontWeight.w500,
@@ -73,7 +72,7 @@ class GapChart extends StatelessWidget {
                   Container(width: 14, height: 1.5, color: AppColor.outline),
                   const SizedBox(width: Space.xs),
                   Text(
-                    'ritim $t gün',
+                    S.gapRhythm(t),
                     style: ui(
                       11,
                       weight: FontWeight.w600,
@@ -83,7 +82,7 @@ class GapChart extends StatelessWidget {
                   const Spacer(),
                 ],
                 Text(
-                  'en yeni',
+                  S.gapNewest,
                   style: ui(
                     11,
                     weight: FontWeight.w500,
