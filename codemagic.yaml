@@ -1,7 +1,7 @@
 # Codemagic — Kaç Gün Oldu?
 #
-# iOS → TestFlight / App Store is the first target. The Android workflow is
-# there for later (Play Console) and can be ignored until then.
+# iOS → TestFlight / App Store only. Android is built and published outside
+# Codemagic (local `flutter build appbundle --release`, uploaded by hand).
 #
 # One-time setup (Codemagic UI → Teams → Integrations):
 #   1. Integration: the team's existing App Store Connect integration, named
@@ -98,44 +98,3 @@ workflows:
         # Goes to TestFlight; submit for review from App Store Connect.
         submit_to_testflight: true
         submit_to_app_store: false
-
-  android-play:
-    name: Android · Play Store
-    instance_type: linux_x2
-    max_build_duration: 30
-    environment:
-      flutter: *flutter_version
-      java: 17
-      android_signing:
-        # Codemagic → Teams → Code signing identities → Android keystores:
-        # upload kacgunoldu-upload.jks, reference name below.
-        - kacgunoldu_upload
-      vars:
-        PACKAGE_NAME: com.emalabs.kacgunoldu
-    triggering:
-      events:
-        - tag
-      tag_patterns:
-        - pattern: "android-v*"
-          include: true
-    scripts:
-      - name: Get Flutter packages
-        script: flutter pub get
-      - name: Analyze and test
-        script: |
-          flutter analyze
-          flutter test
-      - name: Write key.properties from the Codemagic keystore
-        script: |
-          cat > android/key.properties <<EOF
-          storePassword=$CM_KEYSTORE_PASSWORD
-          keyPassword=$CM_KEY_PASSWORD
-          keyAlias=$CM_KEY_ALIAS
-          storeFile=$CM_KEYSTORE_PATH
-          EOF
-      - name: Build app bundle
-        script: |
-          flutter build appbundle --release \
-            --build-number=$(($(date +%s) / 60 - 29000000))
-    artifacts:
-      - build/app/outputs/bundle/release/*.aab
