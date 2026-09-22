@@ -2,7 +2,7 @@ name: kac_gun_oldu
 description: "Kaç gün oldu? — bir şeyi en son ne zaman yaptığını takip eden uygulama."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.12.0
