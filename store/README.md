@@ -49,11 +49,16 @@ paketi debug anahtarıyla imzalar — Play bunu kabul etmez; 1. adımı atlama.
 ### 3. Gizlilik politikasını yayımla
 
 1. Metni değiştirdiysen `legal/content.py`'yi düzenle, sonra `python store/legal/build.py`
-   (gezip.app klasörüne 6 sayfa + simge yazar, `lib/legal/legal_text.dart`'ı yeniler).
-2. gezip.app sitesini Firebase'e yayımla (`firebase deploy --only hosting`). Yayımlanan adresler:
-   - Gizlilik: `https://gezip.app/kacgunoldu/gizlilik` · `/privacy`
-   - Koşullar: `https://gezip.app/kacgunoldu/kullanim-kosullari` · `/terms`
-   - Destek: `https://gezip.app/kacgunoldu/destek` · `/support`
+   (emalabs.info klasörüne `C:/dev/emalabs_site/public` tanıtım sitesi `/kacgunoldu` +
+   `/kacgunoldu/en` — metinleri `legal/landing_content.py`'de —, 6 hukuki/destek sayfası,
+   CSS/JS ve görselleri yazar, `lib/legal/legal_text.dart`'ı yeniler; gezip.app'e yalnızca
+   gizlilik sayfalarını kopyalar, çünkü Play kaydındaki URL orada).
+2. İki siteyi de Firebase'e yayımla (`firebase deploy --only hosting`, önce
+   `C:/dev/emalabs_site`, sonra gezip.app klasöründe). gezip.app'teki diğer `/kacgunoldu`
+   adresleri emalabs.info'ya 301 ile yönlenir. Yayımlanan adresler:
+   - Gizlilik: `https://gezip.app/kacgunoldu/gizlilik` · `/privacy` (emalabs.info'da da var)
+   - Koşullar: `https://emalabs.info/kacgunoldu/kullanim-kosullari` · `/terms`
+   - Destek: `https://emalabs.info/kacgunoldu/destek` · `/support`
 3. Mağaza formlarına: Play → gizlilik URL'si; App Store Connect → **Privacy Policy URL**,
    **Support URL** (destek sayfası), Marketing URL boş bırakılabilir.
 
@@ -116,5 +121,5 @@ uygulamayla bir **App Group** üzerinden paylaşır. Bu yapılmadan iOS derlemes
    "Invalid" olur; sil. Codemagic sonraki derlemede ikisini de (uygulama + widget) yeniden
    üretir (`codemagic.yaml` → "Set up code signing").
 
-Android'i sonra yayımlarsan `android-play` iş akışı hazır: yükleme anahtarını Codemagic'e
-"Android keystore" olarak `kacgunoldu_upload` adıyla yükle.
+Android, Codemagic'e bağlı değil: yerelde `flutter build appbundle --release` ile üretilip
+Play Console'a elle yükleniyor (`tool/create_upload_key.ps1` → `android/key.properties`).

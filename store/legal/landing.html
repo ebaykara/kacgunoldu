@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}" />
+  <meta name="theme-color" content="#FBF5F0" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#171412" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" href="/kacgunoldu/icon.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/kacgunoldu/icon.png" />
+  <link rel="canonical" href="{{canonical}}" />
+{{hreflang}}
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Kaç Gün Oldu?" />
+  <meta property="og:locale" content="{{og_locale}}" />
+  <meta property="og:title" content="{{title}}" />
+  <meta property="og:description" content="{{description}}" />
+  <meta property="og:url" content="{{canonical}}" />
+  <meta property="og:image" content="https://emalabs.info/kacgunoldu/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json">{{jsonld}}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/kacgunoldu/site.css" />
+</head>
+<body class="landing">
+
+{{header}}
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="dot"></span>{{eyebrow}}</p>
+          <h1 class="display">{{h1}}</h1>
+          <p class="hero-sub">{{hero_sub}}</p>
+          <div class="stores" id="indir">
+{{stores}}
+          </div>
+          <ul class="trust">
+{{trust}}
+          </ul>
+        </div>
+
+        <div class="hero-visual" aria-hidden="false">
+          <div class="phone">
+            <img src="/kacgunoldu/img/01-kartlar.webp" alt="{{shot_alt}}" width="600" height="1200" fetchpriority="high" />
+          </div>
+          <div class="float notif" aria-hidden="true">
+            <img src="/kacgunoldu/icon.png" alt="" width="36" height="36" />
+            <div>
+              <div class="notif-head"><b>{{notif_title}}</b><span>{{notif_time}}</span></div>
+              <p>{{notif_body}}</p>
+            </div>
+          </div>
+          <div class="float mini-tile tile tile--calm" aria-hidden="true">
+            <div class="ring" style="--p:90"><svg viewBox="0 0 48 48"><circle class="track" cx="24" cy="24" r="20"/><circle class="arc" cx="24" cy="24" r="20" pathLength="100"/></svg>{{icon_scissors}}</div>
+            <div class="tile-name">{{tile_name}}</div>
+            <div class="tile-count"><span class="num">27</span><span class="unit">{{tile_unit}}</span></div>
+            <div class="tile-status">{{tile_status}}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Questions marquee -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+{{questions}}
+      </div>
+    </div>
+
+    <!-- How it works -->
+    <section class="section" id="nasil">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">{{how_kicker}}</p>
+          <h2 class="display">{{how_title}}</h2>
+          <p class="lead">{{how_lead}}</p>
+        </div>
+        <ol class="steps">
+{{steps}}
+        </ol>
+      </div>
+    </section>
+
+    <!-- Interactive status demo -->
+    <section class="section section--tint" id="durum">
+      <div class="wrap demo-grid">
+        <div class="section-head reveal">
+          <p class="kicker">{{demo_kicker}}</p>
+          <h2 class="display">{{demo_title}}</h2>
+          <p class="lead">{{demo_lead}}</p>
+          <ul class="legend">
+{{legend}}
+          </ul>
+        </div>
+        <div class="demo reveal" data-every="30"
+             data-left="{{demo_left}}" data-today="{{demo_today}}" data-over="{{demo_over}}">
+          <div class="tile tile--calm demo-tile" id="demo-tile">
+            <div class="ring" id="demo-ring" style="--p:60"><svg viewBox="0 0 48 48"><circle class="track" cx="24" cy="24" r="20"/><circle class="arc" cx="24" cy="24" r="20" pathLength="100"/></svg>{{icon_scissors}}</div>
+            <div class="tile-name">{{demo_name}}</div>
+            <div class="tile-count"><span class="num" id="demo-num">18</span><span class="unit">{{demo_unit}}</span></div>
+            <div class="tile-status" id="demo-status" aria-live="polite"></div>
+            <div class="tile-meta">{{demo_every}}</div>
+          </div>
+          <div class="demo-controls">
+            <label for="demo-days">{{demo_slider}} <output id="demo-out">18</output></label>
+            <input type="range" id="demo-days" min="0" max="45" value="18" />
+            <button type="button" class="btn btn--ghost" id="demo-reset">{{icon_check}}{{demo_reset}}</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="ozellikler">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">{{feat_kicker}}</p>
+          <h2 class="display">{{feat_title}}</h2>
+        </div>
+        <div class="features">
+{{features}}
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery -->
+    <section class="section section--gallery" id="ekranlar">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">{{gal_kicker}}</p>
+          <h2 class="display">{{gal_title}}</h2>
+        </div>
+      </div>
+      <div class="gallery" tabindex="0">
+{{gallery}}
+      </div>
+    </section>
+
+    <!-- Privacy -->
+    <section class="section section--dark" id="gizlilik">
+      <div class="wrap privacy-grid">
+        <div class="reveal">
+          <p class="kicker">{{priv_kicker}}</p>
+          <h2 class="display">{{priv_title}}</h2>
+          <p class="lead">{{priv_lead}}</p>
+          <a class="text-link" href="/kacgunoldu/{{slug_privacy}}">{{priv_link}} <span aria-hidden="true">→</span></a>
+        </div>
+        <ul class="priv-points">
+{{priv_points}}
+        </ul>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="sss">
+      <div class="wrap faq-grid">
+        <div class="section-head reveal">
+          <p class="kicker">{{faq_kicker}}</p>
+          <h2 class="display">{{faq_title}}</h2>
+        </div>
+        <div class="faq">
+{{faq}}
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="cta">
+      <div class="wrap cta-inner reveal">
+        <img src="/kacgunoldu/icon.png" alt="" width="84" height="84" class="cta-icon" />
+        <h2 class="display">{{cta_title}}</h2>
+        <p>{{cta_sub}}</p>
+        <div class="stores stores--center">
+{{stores}}
+        </div>
+      </div>
+    </section>
+  </main>
+
+{{footer}}
+
+  <script src="/kacgunoldu/site.js" defer></script>
+</body>
+</html>

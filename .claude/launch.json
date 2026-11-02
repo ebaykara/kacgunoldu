@@ -6,6 +6,18 @@
       "runtimeExecutable": "flutter",
       "runtimeArgs": ["run", "-d", "web-server", "--web-port", "8090", "--web-hostname", "localhost"],
       "port": 8090
+    },
+    {
+      "name": "kacgunoldu-site",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8095", "--directory", "C:/Users/eyupb/Desktop/gezip_app/public"],
+      "port": 8095
+    },
+    {
+      "name": "emalabs-site",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8096", "--directory", "C:/dev/emalabs_site/public"],
+      "port": 8096
     }
   ]
 }
