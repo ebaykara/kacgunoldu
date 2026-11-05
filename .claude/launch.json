@@ -9,14 +9,14 @@
     },
     {
       "name": "kacgunoldu-site",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8095", "--directory", "C:/Users/eyupb/Desktop/gezip_app/public"],
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8095", "--directory", "../gezip_app/public"],
       "port": 8095
     },
     {
       "name": "emalabs-site",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8096", "--directory", "C:/dev/emalabs_site/public"],
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8096", "--directory", "../emalabs_site/public"],
       "port": 8096
     }
   ]
